@@ -14,7 +14,7 @@ D=json.load(open(S+'/site/data.json'))
 usados=set(M["cod"].values());nxt={}
 for c in usados:
     a=c.rsplit('-',1);nxt[a[0]]=max(nxt.get(a[0],0),int(a[1]))
-rows=[];vist={};nomes={o[0]:o[1] for o in D['obras']}
+rows=[];vist={};run=set();nomes={o[0]:o[1] for o in D['obras']}
 for n,ps in D['mat'].items():
     for p in ps:
         sg=M["sig"].get(p['s'])
@@ -23,12 +23,14 @@ for n,ps in D['mat'].items():
             for it in g[1]:
                 key=f"{n}|{p['s']}|{g[0]}|{it[0]}|{it[1]}";vist[key]=vist.get(key,0)+1
                 if vist[key]>1: key+=f"|{vist[key]}"
-                if key not in M["cod"]:
+                pre=it[4] if len(it)>4 and isinstance(it[4],str) and it[4].startswith('VR-') and it[4] not in run else None
+                if pre: M["cod"][key]=pre
+                elif key not in M["cod"] or M["cod"][key] in run:
                     base=f"VR-{n}-{sg}";nxt[base]=nxt.get(base,0)+1;M["cod"][key]=f"{base}-{nxt[base]:04d}"
-                c=M["cod"][key]
+                c=M["cod"][key];run.add(c)
                 if len(it)<5: it.append(c)
                 else: it[4]=c
-                rows.append([c,n,nomes[n],p['p'],g[0],it[0],it[1],it[2]])
+                rows.append([c,n,nomes[n],p['p'],g[0],it[0],it[1],it[2],(it[5] if len(it)>5 else '')])
 D['sig']={v:k for k,v in M["sig"].items()}
 D['sigNome']={}
 for n,ps in D['mat'].items():
@@ -36,5 +38,5 @@ for n,ps in D['mat'].items():
 json.dump(D,open(S+'/site/data.json','w'),ensure_ascii=False,separators=(',',':'))
 json.dump(M,open(mp,'w'),ensure_ascii=False)
 with open(P+'codigos-itens-villa-rica.csv','w',newline='',encoding='utf-8-sig') as f:
-    w=csv.writer(f,delimiter=';');w.writerow(['Código','Obra','Nome da obra','Parte (destinação)','Grupo','Descrição','Unid.','Quant. da lista']);w.writerows(rows)
+    w=csv.writer(f,delimiter=';');w.writerow(['Código','Obra','Nome da obra','Parte (destinação)','Grupo','Descrição','Unid.','Quant. da lista','Obs.']);w.writerows(rows)
 print(len(rows),'itens',len(set(r[0] for r in rows)),'códigos únicos')

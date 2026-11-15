@@ -30,6 +30,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .dv-h span{font-size:.8rem;color:var(--txt-2);font-weight:700}
 .doc{display:flex;align-items:center;gap:12px;text-decoration:none;background:var(--papel);border:1px solid var(--linha);border-radius:16px;padding:8px 12px 8px 8px}
 .doc img{width:84px;height:60px;object-fit:cover;object-position:right bottom;border-radius:10px;background:var(--creme);flex:none}
+.it .nota{display:block;font-size:.7rem;color:var(--txt-2);font-weight:600;margin-top:2px}
 .doc .cod{font-weight:800;color:var(--terra-txt);font-variant-numeric:tabular-nums}
 .doc .tt{font-size:.9rem;min-width:0}
 .doc .np{margin-left:auto;font-size:.78rem;color:var(--txt-2);flex:none;font-weight:700}
@@ -204,7 +205,7 @@ function inicio(){
 }
 
 function cabObra(o,tab){
-  const T=[["","Resumo"],["-docs","Projeto e documentos"],["-mat","Lista de material"],["-fotos","Fotos"]];
+  const T=[["","Resumo"],["-docs","Projeto e documentos"],["-mat","Lista de material"]].concat((D.exe||{})[o[0]]?[["-exe","Execução"]]:[],[["-fotos","Fotos"]]);
   return `<a class="voltar" href="#inicio">← Início</a>
   <div class="cab"><span class="num">${o[0]}</span><div><h1>${o[1]}</h1><p>${o[2]}</p></div></div>
   <nav class="tabs">${T.map(t=>`<a href="#obra-${o[0]}${t[0]}" class="${t[0]===tab?"on":""}">${t[1]}</a>`).join("")}</nav>`;
@@ -236,7 +237,7 @@ function obraDocs(n){
 }
 const docLink=k=>{const d=D.docs[k];return `<a class="doc" href="#doc-${k}"><img loading="lazy" src="p/${k}-1.jpg" alt=""><span style="min-width:0"><span class="cod">${d.c}</span><br><span class="tt">${esc(d.t)}</span>${T[k]?"<br>"+marcaTroca(k):""}</span><span class="np">${d.n} pág.</span></a>`};
 
-function itemHTML(it){return `<div class="it"><span>${esc(it[0])}${it[4]?`<small class="cod">${it[4]}</small>`:""}</span><span class="q">${esc(it[2])} <small>${esc(it[1])}</small>${it[3]?`<span class="st ${it[3]}" title="${it[3]==="M"?"medido":"estimado"}">${it[3]}</span>`:""}</span></div>`}
+function itemHTML(it){return `<div class="it"><span>${esc(it[0])}${it[4]?`<small class="cod">${it[4]}</small>`:""}${it[5]?`<small class="nota">${esc(it[5])}</small>`:""}</span><span class="q">${esc(it[2])} <small>${esc(it[1])}</small>${it[3]?`<span class="st ${it[3]}" title="${it[3]==="M"?"medido":"estimado"}">${it[3]}</span>`:""}</span></div>`}
 function parteHTML(n,p,filtro){
   let tot=0; const gs=p.g.map(g=>{const its=filtro?g[1].filter(filtro):g[1];tot+=its.length;return its.length?`<div class="sub">${esc(g[0])}</div>${its.map(itemHTML).join("")}`:""}).join("");
   if(!tot) return "";
@@ -266,6 +267,12 @@ function obraMat(n,alvo){
     document.querySelectorAll(".fam .chip").forEach(c=>c.classList.toggle("on",c===b));desenha()});
   document.getElementById("qm").addEventListener("input",e=>{q=e.target.value;desenha()});
   desenha();
+}
+function obraExe(n){
+  const o=obra(n),ps=(D.exe||{})[n]||[];
+  app.innerHTML=cabObra(o,"-exe")+`<p style="font-size:.85rem;color:var(--txt-2);margin:10px 4px">Serviços e quantidades de execução (concreto por elemento, forma, alvenaria, reboco, contrapiso, pintura etc.). Não entram na cotação: o que é produto está em Lista de material.</p>
+  <div style="display:flex;flex-direction:column;gap:12px">${ps.map(p=>`<section class="parte"><div class="parte-h"><h3>${esc(p.p)}</h3></div><span class="fam-tag">${esc(p.f)} · execução</span>${p.g.map(g=>`<div class="sub">${esc(g[0])}</div>${g[1].map(it=>`<div class="it"><span>${esc(it[0])}${it[5]?`<small class="nota">${esc(it[5])}</small>`:""}</span><span class="q">${esc(it[2])} <small>${esc(it[1])}</small></span></div>`).join("")}`).join("")}</section>`).join("")||`<p class="vazio">Sem itens de execução nesta obra.</p>`}</div>`;
+  const t=document.querySelector(".tabs .on");if(t)t.scrollIntoView({inline:"center",block:"nearest"});
 }
 function verDoc(k,orig){
   if(!orig&&T[k]) return verTroca(k);
@@ -670,6 +677,7 @@ function rota(){
   if((m=h.match(/^obra-(\d\d)$/))) {obraResumo(m[1]);return scrollTo(0,0)}
   if((m=h.match(/^obra-(\d\d)-docs$/))) {obraDocs(m[1]);return scrollTo(0,0)}
   if((m=h.match(/^obra-(\d\d)-fotos$/))) {obraFotos(m[1]);return scrollTo(0,0)}
+  if((m=h.match(/^obra-(\d\d)-exe$/))) {obraExe(m[1]);return scrollTo(0,0)}
   if((m=h.match(/^obra-(\d\d)-mat(?:-([a-z0-9-]+))?$/))) {obraMat(m[1],m[2]);return scrollTo(0,0)}
   if((m=h.match(/^doc-([a-z0-9-]+)-orig$/))) return verDoc(m[1],true);
   if((m=h.match(/^doc-([a-z0-9-]+)$/))) return verDoc(m[1]);
