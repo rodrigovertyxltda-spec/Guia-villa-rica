@@ -1,6 +1,6 @@
 {
- "name": "Guia de Obra Inteligente - Complexo Villa Rica",
- "short_name": "Guia Villa Rica",
+ "name": "Guia de Obra",
+ "short_name": "Guia de Obra",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

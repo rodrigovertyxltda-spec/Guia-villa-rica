@@ -9,7 +9,7 @@ i=a.index('<link rel="stylesheet" href="https://fonts.googleapis.com');j=a.index
 head='''<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0D1526" media="(prefers-color-scheme: dark)"><meta name="theme-color" content="#EEF2F7" media="(prefers-color-scheme: light)">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/icon-180.png"><link rel="icon" href="icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Guia Villa Rica"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Guia de Obra"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>@font-face{font-family:"Nunito";font-weight:400;src:url(fonts/Nunito-Regular.ttf)}@font-face{font-family:"Nunito";font-weight:500 700;src:url(fonts/Nunito-Bold.ttf)}@font-face{font-family:"Nunito";font-weight:800 900;src:url(fonts/Nunito-Black.ttf)}
 .it.comprado{opacity:.75}.it .cp{grid-column:1/-1;font-size:.75rem;font-weight:800;color:var(--verde-tx)}</style>
 <script src="api.js"></script>
@@ -34,7 +34,7 @@ a=a.replace('@@STYLE@@',open(S+'/style.css.html').read()).replace('@@LOGO@@',ope
 a=a.replace('<meta name="claude:viewport-fit-sides" content="cover">','')
 open(O+'/index.html','w').write(a)
 shutil.copy(S+'/pwasrc/api.js',O+'/api.js');shutil.copy(S+'/site/data.json',O+'/data.json')
-json.dump({"name":"Guia de Obra Inteligente - Complexo Villa Rica","short_name":"Guia Villa Rica","start_url":"./","scope":"./","display":"standalone","background_color":"#0D1526","theme_color":"#F26A10","lang":"pt-BR",
+json.dump({"name":"Guia de Obra","short_name":"Guia de Obra","start_url":"./","scope":"./","display":"standalone","background_color":"#0D1526","theme_color":"#F26A10","lang":"pt-BR",
  "icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]},open(O+'/manifest.webmanifest','w'),ensure_ascii=False,indent=1)
 shell=['./','index.html','api.js','data.json','fin.enc.json','manifest.webmanifest']+[os.path.relpath(f,O) for f in sorted(glob.glob(O+'/icons/*')+glob.glob(O+'/fonts/*')+glob.glob(O+'/f/*')+glob.glob(O+'/pt/*'))]
 h=hashlib.sha256(b''.join(open(O+'/'+(x if x!='./' else 'index.html'),'rb').read() for x in shell)).hexdigest()[:10]
