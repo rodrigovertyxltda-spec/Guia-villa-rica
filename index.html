@@ -501,29 +501,29 @@ async function abrirFin(l,sn){const e=await (await fetch("fin.enc.json",{cache:"
   const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b(e.iv)},dkk,b(e.ct));return JSON.parse(new TextDecoder().decode(pt))}
 const R$=v=>"R$ "+Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const R0=v=>"R$ "+Math.round(v||0).toLocaleString("pt-BR");
-const USERS=[["Valter","#1BA3E0"],["Abel","#F26A10"],["Luiz","#16A34A"],["Rodrigo","#F5A524"]];
+const FL=["JDdZCxQf", "OjdPBg==", "LDtYCw==", "OTVEFREGEw=="].map(s=>{const k="VR-guia-2026",b=atob(s);let o="";for(let i=0;i<b.length;i++)o+=String.fromCharCode(b.charCodeAt(i)^k.charCodeAt(i%k.length));return [...o].reverse().join("")});
+async function abrirFinSenha(sn){const r=await Promise.any(FL.map(l=>abrirFin(l,sn).then(d=>[l,d])));
+  const idb=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("vr-fin|"+r[0])));return [[...idb].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,16),r[1]]}
 function finLogin(dest){
-  let quem="";try{quem=localStorage.getItem("vr-fin-u")||""}catch(_){}
+  try{localStorage.removeItem("vr-fin-u")}catch(_){}
   app.innerHTML=`<a class="voltar" href="#inicio">← Início</a>
   <form id="ff" class="login"><span class="cad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zm2 0h6V7a3 3 0 0 0-6 0z"/></svg></span>
-  <h1>Área financeira</h1><p>Toque no seu nome e digite a senha.</p>
-  <div class="users" role="radiogroup" aria-label="Usuário">${USERS.map(u=>`<button type="button" role="radio" data-u="${u[0]}" aria-checked="${u[0]===quem}" class="${u[0]===quem?"on":""}"><i style="background:${u[1]}"></i>${u[0]}</button>`).join("")}</div>
+  <h1>Área financeira</h1><p>Acesso restrito. Digite sua senha.</p>
   <label for="fs" hidden>Senha</label><div class="campo"><i></i><input id="fs" type="password" placeholder="Senha" autocomplete="current-password"><button type="button" id="ver">ver</button></div>
   <button class="pilula" type="submit" id="fb">Entrar</button><p id="fe" hidden style="color:#DC2626;font-weight:800;margin:0">Senha errada.</p></form>`;
   const ff=document.getElementById("ff"),fs=document.getElementById("fs"),fe=document.getElementById("fe");
-  ff.querySelectorAll("[data-u]").forEach(b=>b.addEventListener("click",()=>{quem=b.dataset.u;ff.querySelectorAll("[data-u]").forEach(x=>{x.classList.toggle("on",x===b);x.setAttribute("aria-checked",x===b)});fe.hidden=true;fs.focus()}));
   document.getElementById("ver").addEventListener("click",e=>{const v=fs.type==="password";fs.type=v?"text":"password";e.target.textContent=v?"ocultar":"ver"});
-  if(quem) setTimeout(()=>fs.focus(),50);
-  ff.addEventListener("submit",async e=>{e.preventDefault();fe.hidden=true;if(!quem){fe.textContent="Toque no seu nome primeiro.";fe.hidden=false;return}
+  setTimeout(()=>fs.focus(),50);
+  ff.addEventListener("submit",async e=>{e.preventDefault();fe.hidden=true;if(!fs.value){fe.textContent="Digite a senha.";fe.hidden=false;return}
     const bt=document.getElementById("fb");bt.textContent="Abrindo…";bt.disabled=true;
-    try{FIN=await abrirFin(quem,fs.value);FINU=quem;try{localStorage.setItem("vr-fin-u",quem)}catch(_){}rota()}catch(_){fe.textContent="Senha errada.";fe.hidden=false;bt.textContent="Entrar";bt.disabled=false}});
+    try{const r=await abrirFinSenha(fs.value);FINU=r[0];FIN=r[1];rota()}catch(_){fe.textContent="Senha errada.";fe.hidden=false;bt.textContent="Entrar";bt.disabled=false}});
 }
-let FINU="";const MASTER=()=>["Luiz","Rodrigo"].includes(FINU);
+let FINU="";const MASTER=()=>["cffaac5d651d7e97", "d05576004fe5c0fd"].includes(FINU);
 function config(){
   if(!FIN||!MASTER()) return finLogin();
   let api="";try{api=localStorage.getItem("vr-api")||""}catch(_){}
   app.innerHTML=finCab("config")+`<section class="bloco"><h2>Usuários e acesso</h2>
-   <table class="tab cfg"><tbody><tr><td>Luiz · Rodrigo</td><td>Master: tudo + configurações</td></tr><tr><td>Valter · Abel</td><td>Área financeira</td></tr><tr><td>Engenheiro · Arquiteto</td><td>Trocar arquivos de projeto</td></tr></tbody></table>
+   <table class="tab cfg"><tbody><tr><td>2 senhas master</td><td>Tudo + configurações</td></tr><tr><td>2 senhas financeiro</td><td>Área financeira</td></tr><tr><td>Engenheiro · Arquiteto</td><td>Trocar arquivos de projeto</td></tr></tbody></table>
    <p style="margin:0;font-size:.85rem;color:var(--txt-2)">Senhas não mudam por aqui. Para trocar alguma senha, peça a nova versão do guia.</p></section>
   <section class="bloco" style="margin-top:12px"><h2>Integração com o sistema</h2>
    <p class="integra" style="margin:0">Estado: aguardando integração. Nada é enviado automaticamente ainda.</p>
@@ -572,7 +572,7 @@ function fin(view,arg){
       ol.innerHTML=r.slice(0,300).map(l=>`<div class="it"><span>${esc(l[3])}<br><span style="font-size:.78rem;color:var(--txt-2)">${esc(l[2])} · ${esc(l[1])}<br>${Number(l[5]).toLocaleString("pt-BR")} ${esc(l[4])} × mat. ${R$(l[7])} + M.O. ${R$(l[8])}</span></span><span class="q">${R0(l[9]+l[10])}</span></div>`).join("")||`<p class="vazio">Nada encontrado.</p>`};
     qo.oninput=des;go.onchange=des;des();
   } else {
-    app.innerHTML=finCab("fin")+`<div class="dados"><div class="dado"><b class="money" style="font-size:1.15rem">${R0(tot)}</b><span>custo direto de execução</span></div><div class="dado"><b class="money" style="font-size:1rem">${R0(tot*0.9)} a ${R0(tot*1.1)}</b><span>faixa provável (±10%)</span></div></div>
+    app.innerHTML=finCab("fin")+`<div class="dados"><div class="dado"><b class="money" style="font-size:1.15rem">${R0(tot)}</b><span>custo direto de execução</span></div><div class="dado"><b class="money" style="font-size:1rem">${R0(tot*0.9)} a<br>${R0(tot*1.1)}</b><span>faixa provável (±10%)</span></div></div>
     <section class="bloco" style="margin-top:12px"><h2>Por pacote</h2><table class="tab"><tbody>${F.pac.map(p=>`<tr><td>${esc(p[0])}</td><td class="money">${R0(p[1])}<br><span style="font-size:.8rem;color:var(--txt-2)">${fm1(100*p[1]/tot)}%</span></td></tr>`).join("")}</tbody></table></section>
     <section class="bloco" style="margin-top:12px"><h2>Desembolso mensal</h2><div style="display:flex;align-items:flex-end;gap:3px;height:140px">${F.des.map((d,i)=>`<a href="#fin-mes-${i+1}" title="${d[0]}" style="flex:1;background:var(--agua);border-radius:4px 4px 0 0;height:${(100*d[1]/Math.max(...F.des.map(z=>z[1]))).toFixed(1)}%"></a>`).join("")}</div>
     <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--txt-2)"><span>${F.des[0][0]}</span><span>${F.des[F.des.length-1][0]}</span></div></section>
