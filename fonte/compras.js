@@ -353,13 +353,45 @@ function pdfDocumento(doc,o){/* o: {tipo, titulo, sub, numLab, num, data, forn, 
   o.cond.forEach(([k,v])=>{F("bold",7.6);cor("txt");doc.text(k,M,yc);F("normal",7.6);const l=cw(v,58);doc.text(l,M+30,yc);yc+=Math.max(1,l.length)*3.7+2});
   ins.forEach(l=>{cor("verde","f");doc.circle(109.5,yi-1.1,.7,"F");F("normal",7.6);cor("txt");doc.text(l,112,yi);yi+=l.length*3.7+1.8});
   y=Math.max(yc,yi)+12;cor("txt","d");doc.setLineWidth(.3);doc.line(70,y,140,y);F("k",8.2);cor("txt");doc.text(CMP.assinatura[0],105,y+4.5,{align:"center"});F("normal",7.6);doc.text(CMP.assinatura[1]||"",105,y+8.5,{align:"center"});
-  rod();const np=doc.getNumberOfPages();if(np>1)for(let i=1;i<=np;i++){doc.setPage(i);F("normal",6.5);doc.setTextColor(255,255,255);doc.text(`pág. ${i}/${np}`,105,293,{align:"center"})}
+  rod();if(o.anexo)o.anexo(doc,{topo,rod,F,cor});const np=doc.getNumberOfPages();if(np>1)for(let i=1;i<=np;i++){doc.setPage(i);F("normal",6.5);doc.setTextColor(255,255,255);doc.text(`pág. ${i}/${np}`,105,293,{align:"center"})}
   return doc}
+let CHM=null;function chapaDe(cod){if(!CHM){CHM={};Object.values(D.mat).forEach(ps=>ps.forEach(p=>p.g.forEach(g=>g[1].forEach(it=>{if(it[6]&&it[4])CHM[it[4]]=it[6]}))))}return CHM[cod]}
+function anexoChapas(pecas){return(doc,k)=>{const {topo,rod,F,cor}=k,M=14,CW=88,CH=73,GX=6,GY=5;
+  const nb=v=>String(Math.round(v*10)/10).replace(".",",");
+  const cota=(x1,y1,x2,y2,t,lado)=>{doc.setDrawColor(150,140,130);doc.setLineWidth(.15);doc.line(x1,y1,x2,y2);
+    const tk=(x,y)=>{if(y1===y2)doc.line(x,y-1,x,y+1);else doc.line(x-1,y,x+1,y)};tk(x1,y1);tk(x2,y2);
+    F("bold",5.6);cor("txt");if(y1===y2)doc.text(t,(x1+x2)/2,y1+(lado<0?-1:2.4),{align:"center"});else doc.text(t,x1+(lado<0?-1.2:1.4),(y1+y2)/2+.9,{align:lado<0?"right":"left"})};
+  doc.addPage();let y=topo(false);
+  F("k",11);cor("verde");doc.text("Desenho das chapas cortadas",M,y+2);F("normal",7);cor("cinza");doc.text("Medidas em mm · aço ASTM A36 · cortar e furar conforme o croqui · uma peça por quadro, quantidade no topo",M,y+6.5);y+=11;
+  let col=0;
+  pecas.forEach((pc,ix)=>{const ch=pc.ch;if(col===0&&y+CH>282){rod();doc.addPage();y=topo(false)}
+    const x0=M+col*(CW+GX),y0=y;
+    cor("linha","d");doc.setLineWidth(.25);doc.setFillColor(255,255,255);doc.roundedRect(x0,y0,CW,CH,2,2,"FD");
+    cor("verde","f");doc.roundedRect(x0,y0,CW,8,2,2,"F");doc.rect(x0,y0+4,CW,4,"F");
+    F("bold",7.2);doc.setTextColor(255,255,255);doc.text(`Linha ${pc.n} · ${pc.cod}`,x0+3,y0+5.4);F("k",8);doc.text(`${pc.q} peças`,x0+CW-3,y0+5.4,{align:"right"});
+    // área do desenho
+    const ax=x0+12,ay=y0+15,aw=CW-26,ah=33,sc=Math.min(aw/ch.L,ah/ch.S),w=ch.L*sc,h=ch.S*sc,px=ax+(aw-w)/2,py=ay+(ah-h)/2;
+    cor("rosa","f");cor("txt","d");doc.setLineWidth(.35);doc.rect(px,py,w,h,"FD");
+    cota(px,py+h+3.5,px+w,py+h+3.5,nb(ch.L),1);cota(px+w+3.5,py,px+w+3.5,py+h,nb(ch.S),1);
+    if(ch.f&&ch.f.length){const r=Math.max(.7,ch.d/2*sc);doc.setFillColor(255,255,255);doc.setLineWidth(.25);
+      ch.f.forEach(([fx,fy])=>{const cx=px+fx*sc,cy=py+h-fy*sc;doc.circle(cx,cy,r,"FD");doc.setLineWidth(.1);doc.line(cx-r-.8,cy,cx+r+.8,cy);doc.line(cx,cy-r-.8,cx,cy+r+.8);doc.setLineWidth(.25)});
+      const xs=[...new Set(ch.f.map(p=>p[0]))].sort((a,b)=>a-b),ys=[...new Set(ch.f.map(p=>p[1]))].sort((a,b)=>a-b);
+      // cotas de furação em cima (x) e à esquerda (y)
+      const pts=[0,...xs,ch.L];for(let i=0;i<pts.length-1;i++)cota(px+pts[i]*sc,py-3,px+pts[i+1]*sc,py-3,nb(pts[i+1]-pts[i]),-1);
+      const pys=[0,...ys,ch.S];for(let i=0;i<pys.length-1;i++)cota(px-3,py+h-pys[i]*sc,px-3,py+h-pys[i+1]*sc,nb(pys[i+1]-pys[i]),-1)}
+    // legenda
+    let ly=y0+CH-15.5;cor("linha","d");doc.setLineWidth(.2);doc.line(x0+3,ly-3.2,x0+CW-3,ly-3.2);
+    F("k",8);cor("txt");doc.text(`${nb(ch.L)} x ${nb(ch.S)} mm · esp. ${nb(ch.e)} mm`,x0+3,ly+.6);
+    F("bold",7);cor(ch.f?"verde":"terra");doc.text(ch.n?`${ch.n} furos Ø${nb(ch.d)} mm`+(ch.f?` · furação conforme ${ch.ref}`:" · POSIÇÃO DOS FUROS A CONFIRMAR"):"sem furos",x0+3,ly+4.6);
+    F("normal",6.2);cor("cinza");doc.text(doc.splitTextToSize(pc.d.replace(/^Chapa cortada ASTM A36 [^–]*– [^–]*– [^–]*– /,""),CW-6)[0],x0+3,ly+8.4);
+    col++;if(col===2){col=0;y+=CH+GY}});
+  if(col)y+=CH+GY;rod()}}
 async function pdfCot(c,forn){const doc=await pdfBase();
   const rows=c.linhas.map((l,i)=>{const q=l.r.reduce((a,r)=>a+r.q,0);return{c:String(i+1),d:l.d,obs:"OBS: "+l.r.map(r=>r.c+(l.r.length>1?" ("+nBR(r.q)+" "+l.u+")":"")+" · "+obra(r.o)[1]).join(" | "),v:[nBR(q),l.u,null,null,null,null]}});
   pdfDocumento(doc,{tipo:"PEDIDO DE COTAÇÃO",titulo:"Pedido de Cotação",sub:c.titulo+(c.destino?" · "+c.destino:""),numLab:"Nº DO PEDIDO",num:"COT "+c.num,data:dLong(c.em),forn,destino:c.destino,secItens:"Itens para cotação",
     cols:[{t:"ITEM",w:10},{t:"DESCRIÇÃO / OBS",w:80},{t:"QTDE",w:18,a:"r"},{t:"UNID.",w:12},{t:"PREÇO UNIT.",w:22},{t:"ICMS",w:12},{t:"IPI",w:10},{t:"TOTAL",w:18}],rows,
-    nota:"Preencha preço unitário, ICMS e IPI de cada linha. Mantenha o código VR (OBS) na proposta: ele identifica a obra e a destinação de cada item.",
+    nota:"Preencha preço unitário, ICMS e IPI de cada linha. Mantenha o código VR (OBS) na proposta: ele identifica a obra e a destinação de cada item."+(c.linhas.some(l=>l.r.some(r=>chapaDe(r.c)&&chapaDe(r.c).L))?" Chapas cortadas: ver o desenho de cada peça no final deste pedido.":""),
+    anexo:(()=>{const pc=[];c.linhas.forEach((l,i)=>{const r=l.r.find(r=>chapaDe(r.c)&&chapaDe(r.c).L);if(r)pc.push({n:i+1,cod:r.c,ch:chapaDe(r.c),q:nBR(l.r.reduce((a,x)=>a+x.q,0)),d:l.d})});return pc.length?anexoChapas(pc):null})(),
     secCond:"Condições da proposta",cond:[["Prazo de resposta",c.prazo||"o quanto antes"],["Entrega","Na obra (frete CIF), conforme endereço acima"],["Pagamento","Informar condições e parcelas"],["Validade","Informar validade da proposta"]],instr:CMP.instrCOT});
   return new File([doc.output("blob")],`Pedido de cotacao COT ${c.num} - Villa Rica${forn?" - "+forn.nome.split(" ")[0]:""}.pdf`,{type:"application/pdf"})}
 async function pdfOC(o){if(o.status!=="liberada")throw new Error("pendente");const doc=await pdfBase();
