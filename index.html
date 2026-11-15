@@ -543,7 +543,7 @@ function config(){
   g("ctest").onclick=async()=>{const u=g("capi").value.trim();if(!/^https:\/\//.test(u)){g("cres").textContent="Digite um endereço que comece com https://";return}
     g("cres").textContent="Testando…";try{const r=await fetch(u.replace(/\/+$/,"")+"/status",{method:"GET",mode:"cors"});g("cres").textContent=r.ok?"Conectado ("+r.status+").":"Respondeu: "+r.status}catch(e){g("cres").textContent="Sem resposta (endereço errado, sem internet ou bloqueado)."}};
   if(window.API){API.pendentes().then(n=>{g("cpend").textContent=n+" registro(s) aguardando envio."});
-    g("cexp").onclick=async()=>{const out={};for(const c of ["troca","historico","fotos","denuncias","baixas","cotacoes","orcamentos","ocs"]){const s=await DB.collection(c).get();out[c]=s.docs.map(d=>({id:d.id,...d.data(),url:undefined}))}
+    g("cexp").onclick=async()=>{const out={};for(const c of ["troca","historico","fotos","denuncias","baixas","cotacoes","orcamentos","ocs","produtos","fornecedores"]){const s=await DB.collection(c).get();out[c]=s.docs.map(d=>({id:d.id,...d.data(),url:undefined}))}
       const b=new Blob([JSON.stringify(out,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="guia-villa-rica-registros.json";a.click()}}
 }
 function finCab(tab){const T=[["fin","Resumo"],["fin-obras","Por obra"],["fin-mes","Mês a mês"],["fin-orc","Orçamento detalhado"]].concat(MASTER()?[["config","Configurações"]]:[]);
@@ -926,7 +926,7 @@ function cmpLogin(depois){let nm="";try{nm=localStorage.getItem("vr-tr-nome")||"
   m.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const nome=$("tn").value.trim(),er=t=>{$("te").textContent=t;$("te").hidden=false};
     if(nome.length<2) return er("Digite seu nome.");if(!$("ts").value) return er("Digite a senha.");
     $("tb").disabled=true;$("tb").textContent="Conferindo…";
-    try{CMP=await cmpAbrir($("ts").value);CMPN=nome;try{localStorage.setItem("vr-tr-nome",nome)}catch(_){}m.remove();depois&&depois()}
+    try{CMP=await cmpAbrir($("ts").value);CMPN=nome;try{(await colDocs("fornecedores")).forEach(f=>{const x={};FCAMPOS.forEach(([k])=>x[k]=f[k]||"");if(x.nome&&!CMP.fornecedores.some(y=>y.nome===x.nome))CMP.fornecedores.push(x)})}catch(_){}try{localStorage.setItem("vr-tr-nome",nome)}catch(_){}m.remove();depois&&depois()}
     catch(x){$("tb").disabled=false;$("tb").textContent="Entrar";er(x&&x.message==="senha"?"Senha errada.":"Não foi possível abrir. Tente de novo.")}});
 }
 function cmpTopo(t,volta="#cmp"){return `<a class="voltar" href="${volta}">← ${volta==="#cmp"?"Cotações e ordens":volta==="#compras"?"Compras da obra":"Voltar"}</a><h1 style="font-size:1.8rem;margin-top:8px">${t}</h1>`}
@@ -938,6 +938,7 @@ async function cmpRota(sub){
   if(sub==="nova") return cmpNova();
   if(sub==="rev") return cmpRev();
   if(sub==="forn") return cmpForn();
+  if(sub==="prod") return cmpProd();
   if(sub==="gerar") return cmpHome("gerar");
   if(sub==="ordens") return cmpHome("ordens");
   if((m=sub.match(/^c-(.+)$/))) return cmpCot(m[1]);
@@ -962,7 +963,7 @@ async function cmpHome(aba="cot"){
   const ocCard=o=>`<a class="cm-card" href="#cmp-oc-${o.id}"><span><b>OC ${esc(o.num)} · ${esc(o.forn.nome)}</b><small>${esc(o.titulo||"")} · ${dt(o.em)}</small><br>${ocSit(o)}</span><span class="money" style="font-weight:900">${rBR(o.total)}</span></a>`;
   if(aba==="cot") cx.innerHTML=`<a class="pilula" href="#cmp-nova">+ Novo pedido de cotação</a><section class="bloco" style="margin-top:12px"><h2>Pedidos de cotação</h2>${cs.map(c=>{const no=ors.filter(o=>o.cot===c.id).length,nc=os.filter(o=>o.cot===c.id).length;
     return `<a class="cm-card" href="#cmp-c-${c.id}"><span><b>COT ${esc(c.num)} · ${esc(c.titulo||"")}</b><small>${c.linhas.length} linhas · ${dt(c.em)} · ${no} orçamento(s)${nc?" · "+nc+" OC":""}</small></span><span>›</span></a>`}).join("")||'<p class="vazio">Nenhum pedido de cotação ainda.</p>'}</section>
-    <div class="secao" style="margin-top:12px"><a class="pilula clara" href="#cmp-forn">Fornecedores</a></div>`;
+    <div class="secao" style="margin-top:12px"><a class="pilula clara" href="#cmp-forn">Fornecedores</a></div><div class="secao" style="margin-top:8px"><a class="pilula clara" href="#cmp-prod">Cadastrar produtos</a></div>`;
   if(aba==="gerar") cx.innerHTML=`<p style="color:var(--txt-2);margin:0 4px 10px">1. Anexe o orçamento do fornecedor no pedido de cotação. 2. Confira e toque em Gerar. 3. A ordem fica pendente até ser liberada com a senha de liberação; só depois dá para baixar.</p>
     <section class="bloco"><h2>Pedidos de cotação</h2>${cs.map(c=>{const no=ors.filter(o=>o.cot===c.id).length;
     return `<div class="cm-card"><span><b>COT ${esc(c.num)} · ${esc(c.titulo||"")}</b><small>${no?no+" orçamento(s) anexado(s)":"sem orçamento anexado"}</small></span>${no?`<a class="mini" href="#cmp-g-${c.id}">Gerar OC</a>`:`<a class="mini clara" href="#cmp-o-${c.id}">Anexar orçamento</a>`}</div>`}).join("")||'<p class="vazio">Crie um pedido de cotação primeiro.</p>'}</section>
@@ -971,7 +972,7 @@ async function cmpHome(aba="cot"){
 }
 
 /* --- novo pedido: escolher partes --- */
-function cmpNova(){
+async function cmpNova(){const PRD=(await colDocs("produtos")).sort((a,b)=>a.cod.localeCompare(b.cod));
   const obs=D.obras.filter(o=>(D.mat[o[0]]||[]).length);
   const sigs=[...new Set(Object.values(D.mat).flatMap(ps=>ps.map(p=>p.g[0]&&p.g[0][1][0]?sigDe(p.g[0][1][0][4]):"")))].filter(Boolean).sort();
   app.innerHTML=cmpTopo("Novo pedido de cotação")+`<p style="color:var(--txt-2);margin:4px 4px 10px">1. Escolha o que entra: uma parte, a obra inteira ou tudo de uma vez. No próximo passo você ajusta as quantidades.</p>
@@ -979,22 +980,24 @@ function cmpNova(){
   <details class="cm-ob" style="margin-bottom:8px"><summary>Marcar por tipo de parte (todas as obras)</summary><div class="chips" style="margin-top:8px">${sigs.map(s=>`<button class="chip" data-sg="${s}">${s} · ${esc(D.sigNome[s]||"")}</button>`).join("")}</div></details>
   <div style="display:flex;flex-direction:column;gap:8px">${obs.map(o=>`<details class="cm-ob"><summary><input type="checkbox" data-ob="${o[0]}"> ${o[0]} ${esc(o[1])} <small style="margin-left:auto;color:var(--txt-2)">${nItens(o[0])} itens</small></summary>
     ${D.mat[o[0]].map(p=>{const n=p.g.reduce((a,g)=>a+g[1].length,0),sg=sigDe(p.g[0]&&p.g[0][1][0]&&p.g[0][1][0][4]);return `<label><input type="checkbox" data-pt="${o[0]}|${p.s}" data-sgp="${sg}"> ${esc(p.p)} <small style="color:var(--txt-2)">· ${sg} · ${n} itens</small></label>`}).join("")}</details>`).join("")}</div>
+  ${PRD.length?`<details class="cm-ob" style="margin-top:8px"><summary>Produtos cadastrados <small style="margin-left:auto;color:var(--txt-2)">${PRD.length}</small></summary>${PRD.map(x=>`<label><input type="checkbox" data-pp="${x.id}"> ${esc(x.d)} <small style="color:var(--txt-2)">· ${esc(x.cod)} · ${esc(x.u)}</small></label>`).join("")}</details>`:""}
   <label style="display:flex;gap:8px;align-items:center;margin:14px 4px;font-weight:800"><input type="checkbox" id="cagr" checked> Juntar itens iguais de obras diferentes numa linha só (rateio na OBS)</label>
   <p id="ccont" style="font-weight:800;margin:0 4px 10px"></p><button class="pilula" id="cseg">Continuar</button>`;
   const pts=[...app.querySelectorAll("[data-pt]")],cont=()=>{const sel=pts.filter(x=>x.checked);let n=0;sel.forEach(x=>{const [o,s]=x.dataset.pt.split("|");const p=D.mat[o].find(q=>q.s===s);n+=p.g.reduce((a,g)=>a+g[1].length,0)});
-    document.getElementById("ccont").textContent=`${sel.length} parte(s) · ${n} itens`;app.querySelectorAll("[data-ob]").forEach(ob=>{const ps=pts.filter(x=>x.dataset.pt.startsWith(ob.dataset.ob+"|"));ob.checked=ps.every(x=>x.checked);ob.indeterminate=!ob.checked&&ps.some(x=>x.checked)})};
+    const npp=[...app.querySelectorAll("[data-pp]")].filter(x=>x.checked).length;document.getElementById("ccont").textContent=`${sel.length} parte(s) · ${n+npp} itens`;app.querySelectorAll("[data-ob]").forEach(ob=>{const ps=pts.filter(x=>x.dataset.pt.startsWith(ob.dataset.ob+"|"));ob.checked=ps.every(x=>x.checked);ob.indeterminate=!ob.checked&&ps.some(x=>x.checked)})};
   app.querySelectorAll("[data-ob]").forEach(ob=>{ob.addEventListener("click",e=>e.stopPropagation());ob.addEventListener("change",()=>{pts.filter(x=>x.dataset.pt.startsWith(ob.dataset.ob+"|")).forEach(x=>x.checked=ob.checked);cont()})});
-  pts.forEach(x=>x.addEventListener("change",cont));
+  pts.forEach(x=>x.addEventListener("change",cont));app.querySelectorAll("[data-pp]").forEach(x=>x.addEventListener("change",cont));const pps=[...app.querySelectorAll("[data-pp]")];
   document.getElementById("ctudo").onclick=()=>{pts.forEach(x=>x.checked=true);cont()};document.getElementById("climpa").onclick=()=>{pts.forEach(x=>x.checked=false);cont()};
   app.querySelectorAll("[data-sg]").forEach(b=>b.onclick=()=>{const al=pts.filter(x=>x.dataset.sgp===b.dataset.sg),on=!al.every(x=>x.checked);al.forEach(x=>x.checked=on);cont()});
-  if(DRAFT&&DRAFT.sel) pts.forEach(x=>x.checked=DRAFT.sel.includes(x.dataset.pt));cont();
-  document.getElementById("cseg").onclick=()=>{const sel=pts.filter(x=>x.checked).map(x=>x.dataset.pt);if(!sel.length) return toast("Marque pelo menos uma parte.");
+  if(DRAFT&&DRAFT.sel){pts.forEach(x=>x.checked=DRAFT.sel.includes(x.dataset.pt));pps.forEach(x=>x.checked=(DRAFT.psel||[]).includes(x.dataset.pp))}cont();
+  document.getElementById("cseg").onclick=()=>{const sel=pts.filter(x=>x.checked).map(x=>x.dataset.pt);const psel=pps.filter(x=>x.checked).map(x=>PRD.find(y=>y.id===x.dataset.pp));if(!sel.length&&!psel.length) return toast("Marque pelo menos uma parte ou produto.");
     const agr=document.getElementById("cagr").checked,map=new Map(),linhas=[];
     sel.forEach(pt=>{const [o,s]=pt.split("|");const p=D.mat[o].find(q=>q.s===s);p.g.forEach((g,gi)=>g[1].forEach((it,ii)=>{
       const r={c:it[4],k:`${o}|${s}|${gi}|${ii}`,o,q:pnum(it[2]),sq:pnum(it[2])},key=norm(it[0])+"|"+it[1];
       if(agr&&map.has(key)) map.get(key).r.push(r);else{const l={d:it[0],u:it[1],r:[r]};linhas.push(l);if(agr)map.set(key,l)}}))});
-    const obsSel=[...new Set(sel.map(x=>x.split("|")[0]))],ptsSel=[...new Set(sel.map(x=>{const [o,s]=x.split("|");return D.mat[o].find(q=>q.s===s).p}))];
-    DRAFT={sel,agr,linhas,titulo:ptsSel.length<=3?ptsSel.join(", "):"Materiais diversos",destino:obsSel.length===obsSel.length&&obsSel.length<=3?obsSel.map(o=>obra(o)[1]).join(", "):obsSel.length+" obras do complexo",prazo:""};
+    psel.forEach(x=>{const r={c:x.cod,k:"prod|"+x.id,o:x.o,q:+x.q||1,sq:+x.q||1},key=norm(x.d)+"|"+x.u;if(agr&&map.has(key))map.get(key).r.push(r);else{const l={d:x.d,u:x.u,r:[r]};linhas.push(l);if(agr)map.set(key,l)}});
+    const obsSel=[...new Set(sel.map(x=>x.split("|")[0]).concat(psel.map(x=>x.o)))],ptsSel=[...new Set(sel.map(x=>{const [o,s]=x.split("|");return D.mat[o].find(q=>q.s===s).p}).concat(psel.map(x=>D.sigNome[x.sg]||x.sg)))];
+    DRAFT={sel,psel:psel.map(x=>x.id),agr,linhas,titulo:ptsSel.length<=3?ptsSel.join(", "):"Materiais diversos",destino:obsSel.length===obsSel.length&&obsSel.length<=3?obsSel.map(o=>obra(o)[1]).join(", "):obsSel.length+" obras do complexo",prazo:""};
     location.hash="cmp-rev"};
 }
 /* --- revisar quantidades --- */
@@ -1133,9 +1136,28 @@ function libLogin(o){const m=document.createElement("div");m.id="mt";m.className
     try{await DB.collection("historico").add({acao:"liberou ordem de compra",cod:"OC "+o.num,titulo:o.forn.nome,obra:"",nome,papel:"Liberação",em:new Date().toISOString(),doc:""})}catch(_){}
     m.remove();await cmpStatus();toast("Ordem de compra liberada.");cmpOC(o.id)});
 }
+const FCAMPOS=[["nome","Razão social"],["cnpj","CNPJ"],["end","Endereço"],["cidade","Cidade – UF · CEP"],["ac","A/C (contato)"],["email","E-mail / telefone"],["cliente","Nosso nº de cliente"]];
 function cmpForn(){
   app.innerHTML=cmpTopo("Fornecedores")+`<section class="bloco">${CMP.fornecedores.map(f=>`<div class="cm-card"><span><b>${esc(f.nome)}</b><small>${esc([f.cnpj&&"CNPJ "+f.cnpj,f.cidade,f.ac&&"A/C "+f.ac,f.email].filter(Boolean).join(" · "))}</small></span></div>`).join("")}</section>
-  <p class="integra">Fornecedor novo entra na hora de anexar um orçamento.</p>`}
+  <section class="bloco" style="margin-top:12px"><h2>Cadastrar fornecedor</h2><div class="cm-g">${FCAMPOS.map(([k,t])=>`<label>${t}<input data-fn="${k}"></label>`).join("")}</div><button class="pilula" id="fsv">Salvar fornecedor</button></section>
+  <div class="secao" style="margin-top:12px"><a class="pilula clara" href="#cmp-prod">Cadastrar produtos</a></div>`;
+  document.getElementById("fsv").onclick=async()=>{const f={};app.querySelectorAll("[data-fn]").forEach(x=>f[x.dataset.fn]=x.value.trim());if(!f.nome)return toast("Digite a razão social.");
+    CMP.fornecedores.push(f);try{const ex=JSON.parse(localStorage.getItem("vr-cmp-forn")||"[]");ex.push(f);localStorage.setItem("vr-cmp-forn",JSON.stringify(ex))}catch(_){}
+    try{await DB.collection("fornecedores").add({...f,nome_cad:CMPN,em:new Date().toISOString()})}catch(_){}toast("Fornecedor salvo.");cmpForn()}}
+async function cmpProd(){
+  const PRD=(await colDocs("produtos")).sort((a,b)=>a.cod.localeCompare(b.cod)),sigs=Object.keys(D.sigNome).sort(),obs=D.obras;
+  app.innerHTML=cmpTopo("Cadastrar produtos")+`<p style="color:var(--txt-2);margin:4px 4px 12px">Para item que não está na lista da obra. Ele ganha código no padrão VR (final 9001 em diante, para não repetir os da lista) e aparece no novo pedido de cotação.</p>
+  <section class="bloco"><div class="cm-f">Descrição<input id="pd" maxlength="160" placeholder="ex.: Parafuso sextavado 1/2 x 2 galvanizado"></div>
+   <div class="cm-g"><label>Unidade<input id="pu" list="pul" value="un"></label><label>Quantidade sugerida<input id="pq" inputmode="decimal" value="1"></label></div><datalist id="pul">${["un","m","m²","m³","kg","barra","cj","pç","rolo","lata","saco","par","vb"].map(u=>`<option value="${u}">`).join("")}</datalist>
+   <div class="cm-f">Obra<select id="po">${obs.map(o=>`<option value="${o[0]}">${o[0]} ${esc(o[1])}</option>`).join("")}</select></div>
+   <div class="cm-f">Parte / destinação<select id="ps">${sigs.map(s=>`<option value="${s}">${s} · ${esc(D.sigNome[s])}</option>`).join("")}</select></div>
+   <p id="pcod" style="margin:0;font-weight:800"></p><button class="pilula" id="psv">Cadastrar produto</button></section>
+  <section class="bloco" style="margin-top:12px"><h2>Produtos cadastrados</h2>${PRD.map(x=>`<div class="cm-card"><span><b>${esc(x.d)}</b><small>${esc(x.cod)} · ${esc(obra(x.o)[1])} · ${esc(D.sigNome[x.sg]||x.sg)} · ${nBR(x.q)} ${esc(x.u)} · ${esc(x.nome)}</small></span></div>`).join("")||'<p class="vazio">Nenhum produto cadastrado ainda.</p>'}</section>`;
+  const g=i=>document.getElementById(i),prox=()=>{const base=`VR-${g("po").value}-${g("ps").value}`;let mx=9000;PRD.forEach(x=>{if(x.cod.startsWith(base+"-"))mx=Math.max(mx,parseInt(x.cod.split("-")[3])||0)});return base+"-"+(mx+1)};
+  const mostra=()=>{g("pcod").textContent="Código: "+prox()};g("po").onchange=mostra;g("ps").onchange=mostra;mostra();
+  g("psv").onclick=async()=>{const d=g("pd").value.trim();if(d.length<3)return toast("Digite a descrição do produto.");const cod=prox();
+    await DB.collection("produtos").add({cod,d,u:g("pu").value.trim()||"un",q:pnum(g("pq").value)||1,o:g("po").value,sg:g("ps").value,nome:CMPN,em:new Date().toISOString()});
+    await hist("cadastrou produto",cod,d);toast("Produto cadastrado: "+cod);cmpProd()}}
 
 /* --- situação do item --- */
 async function cmpStatus(){if(!DB)return;const st={},lev={cot:1,orc:2,oc:3,rec:4},up=(c,s,t)=>{if(c&&(!st[c]||lev[s]>=lev[st[c].s]))st[c]={s,t}};

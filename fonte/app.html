@@ -433,7 +433,7 @@ function config(){
   g("ctest").onclick=async()=>{const u=g("capi").value.trim();if(!/^https:\/\//.test(u)){g("cres").textContent="Digite um endereço que comece com https://";return}
     g("cres").textContent="Testando…";try{const r=await fetch(u.replace(/\/+$/,"")+"/status",{method:"GET",mode:"cors"});g("cres").textContent=r.ok?"Conectado ("+r.status+").":"Respondeu: "+r.status}catch(e){g("cres").textContent="Sem resposta (endereço errado, sem internet ou bloqueado)."}};
   if(window.API){API.pendentes().then(n=>{g("cpend").textContent=n+" registro(s) aguardando envio."});
-    g("cexp").onclick=async()=>{const out={};for(const c of ["troca","historico","fotos","denuncias","baixas","cotacoes","orcamentos","ocs"]){const s=await DB.collection(c).get();out[c]=s.docs.map(d=>({id:d.id,...d.data(),url:undefined}))}
+    g("cexp").onclick=async()=>{const out={};for(const c of ["troca","historico","fotos","denuncias","baixas","cotacoes","orcamentos","ocs","produtos","fornecedores"]){const s=await DB.collection(c).get();out[c]=s.docs.map(d=>({id:d.id,...d.data(),url:undefined}))}
       const b=new Blob([JSON.stringify(out,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="guia-villa-rica-registros.json";a.click()}}
 }
 function finCab(tab){const T=[["fin","Resumo"],["fin-obras","Por obra"],["fin-mes","Mês a mês"],["fin-orc","Orçamento detalhado"]].concat(MASTER()?[["config","Configurações"]]:[]);

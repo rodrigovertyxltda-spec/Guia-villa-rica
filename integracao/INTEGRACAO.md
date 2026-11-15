@@ -16,13 +16,15 @@ Cada registro é um documento `colecao/id` com `_pend:true` até o servidor conf
 | `cotacoes` | Pedido de cotação | num, titulo, destino, prazo, agr, linhas[{d,u,r:[{c,k,o,q}]}], nome, em |
 | `orcamentos` | Orçamento do fornecedor anexado | cot, cotNum, forn{nome,cnpj,end,cidade,ac,email,cliente}, prop, data, asset, pag{forma,parc,venc}, frete, obs, precos[{pu,cf,icms,ipi}] (mesma ordem das linhas), nome, em |
 | `ocs` | Ordem de compra | status ("pendente"/"liberada"), num, cot, cotNum, orc, forn, titulo, destino, itens[{d,u,q,pu,icms,ipi,cf,tot,r}], total, pag, libNome, libEm, nome, em |
+| `produtos` | Produto cadastrado fora da lista | cod (VR-OO-PP-9001 em diante), d, u, q, o (obra), sg (parte), nome, em |
+| `fornecedores` | Fornecedor cadastrado | nome, cnpj, end, cidade, ac, email, cliente, em |
 | `baixas` | Baixa por nota fiscal | obra, parte, itens[chaves], nf, oc, asset, nome, em |
 | `fotos` | Fotos por obra | obra, asset, nome, em |
 | `denuncias/{aparelho}` | Denúncias | itens[...] com foto (asset) |
 | `troca` | Troca de arquivo de projeto | doc, acao, asset, nome, papel, em |
 | `historico` | Quem fez o quê | acao, cod, titulo, obra, nome, papel, em |
 
-- `c` = código do item **VR-OO-PP-NNNN** (OO obra 00–20, PP parte/destinação, NNNN sequência). Tabela completa: `codigos-itens-villa-rica.csv` (2.409 itens). Código fixo.
+- `c` = código do item **VR-OO-PP-NNNN** (OO obra 00–20, PP parte/destinação, NNNN sequência). Tabela completa: `codigos-itens-villa-rica.csv` (2.409 itens). Código fixo. Produtos cadastrados no app usam NNNN a partir de 9001 (coleção `produtos`); com servidor, recomenda-se o servidor validar que o código não se repete.
 - `k` = chave interna do item na lista (`obra|parte|grupo|item`); `o` = obra; `q` = quantidade.
 - `asset` = id do arquivo (foto, PDF da NF, orçamento) guardado no aparelho.
 
