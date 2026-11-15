@@ -1,0 +1,24 @@
+{
+ "name": "Guia de Obra Inteligente - Complexo Villa Rica",
+ "short_name": "Guia Villa Rica",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0D1526",
+ "theme_color": "#F26A10",
+ "lang": "pt-BR",
+ "icons": [
+  {
+   "src": "icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}
