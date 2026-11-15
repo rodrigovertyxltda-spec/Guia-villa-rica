@@ -22,11 +22,11 @@ rep('toast("Feito. Já aparece para todos.")','toast("Feito. Salvo neste aparelh
 rep('toast("Foto salva. Já aparece para todos.")','toast("Foto salva neste aparelho.")')
 rep('Só a diretoria vê as denúncias.','Fica guardada neste aparelho até a integração com o sistema.')
 rep("Abra o guia pelo link, com internet e conectado à sua conta, para ver o histórico.","Histórico indisponível.")
-rep('<p style="color:var(--txt-2);margin:6px 4px 12px">Quem trocou, tirou ou anexou arquivo de projeto, e quando.</p>','<p style="color:var(--txt-2);margin:6px 4px 12px">Quem trocou, tirou ou anexou arquivo, deu baixa por NF, e quando.</p><p id="pend" class="integra" style="margin:0 0 12px"></p>')
+rep('<p style="color:var(--txt-2);margin:6px 4px 12px">Quem trocou, tirou ou anexou arquivo de projeto, e quando.</p>','<p style="color:var(--txt-2);margin:6px 4px 12px">Quem trocou, tirou ou anexou arquivo, baixou projeto, deu baixa por NF, e quando.</p><p id="pend" class="integra" style="margin:0 0 12px"></p>')
 rep('if(!DB) return;\n  DB.collection("historico")','pendInfo();if(!DB) return;\n  DB.collection("historico")')
 # baixar obra offline no topo de Projeto e documentos
-rep('''  app.innerHTML=cabObra(o,"-docs")+(podeTrocar()?''','''  const offOk=(()=>{try{return localStorage.getItem("vr-off-"+n)==="1"}catch(_){return false}})();
-  app.innerHTML=cabObra(o,"-docs")+`<button class="pilula verde" data-off="${n}" style="margin:4px 0 10px;padding:12px">${offOk?"✓ Pranchas desta obra salvas · atualizar":"Baixar pranchas desta obra para usar sem internet"}</button>`+(podeTrocar()?''')
+rep('''  app.innerHTML=cabObra(o,"-docs")+`<a class="pilula clara"''','''  const offOk=(()=>{try{return localStorage.getItem("vr-off-"+n)==="1"}catch(_){return false}})();
+  app.innerHTML=cabObra(o,"-docs")+`<button class="pilula verde" data-off="${n}" style="margin:4px 0 10px;padding:12px">${offOk?"✓ Pranchas desta obra salvas · atualizar":"Baixar pranchas desta obra para usar sem internet"}</button>`+`<a class="pilula clara"''')
 rep('<p class="aviso">${totPg} páginas','<p class="aviso">Aplicativo instalado: funciona sem internet. ${totPg} páginas')
 # extras antes de rota
 rep('\nfunction rota(){',open(S+'/pwasrc/extra.js').read()+'\nfunction rota(){')
