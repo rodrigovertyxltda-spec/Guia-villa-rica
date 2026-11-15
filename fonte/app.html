@@ -82,7 +82,8 @@ h1,h2,h3{font-weight:900;color:var(--txt);letter-spacing:-.01em}
 .busca input{padding-right:60px!important}
 .resp{margin-top:12px;background:var(--papel);border:2px solid var(--terra);border-radius:18px;padding:14px 16px}
 .resp .rtag{font-size:.7rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--terra-txt)}
-.resp p{margin:6px 0 4px;font-weight:800;font-size:1.05rem}
+.resp p{margin:6px 0 4px;font-weight:600;font-size:1rem;line-height:1.5}
+.resp details{margin-top:6px}.resp summary{font-size:.82rem;font-weight:800;color:var(--txt-2);cursor:pointer}
 .resp ul{margin:6px 0;padding-left:18px;font-size:.88rem;font-weight:600}.resp li{margin:3px 0}
 .resp .rmais{font-size:.8rem;font-weight:600;color:var(--txt-2)}
 .resp .rlink{display:inline-block;margin-top:6px;font-weight:800;color:var(--terra-txt)}
@@ -189,45 +190,86 @@ function buscar(q,lim){
   return out;
 }
 /* Assistente local: entende a pergunta e responde só com os dados do guia (sem internet, sem servidor) */
+/* Assistente local: entende a pergunta e responde só com o que está no guia (listas, pranchas, notas dos projetos, cronograma). Sem internet e sem servidor. */
 const MESES=["janeiro","fevereiro","marco","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-const PARE=new Set("a o as os de da do das dos na no nas nos em e para pra pro com um uma uns umas que qual quais quanto quanta quantos quantas tem ter temos tenho vai vou precisa preciso preciso me mostra mostrar ver quero saber sobre onde esta estao fica ficam e eh da de por favor ai la isso esse essa este esta obra obras lista material materiais item itens metro metros metragem m quilo quilos kg peca pecas unidade unidades total".split(" "));
-const ALIAS={"ginasio":"03","quadra coberta":"03","poliesportivo":"03","aquecida":"02","restaurante":"01","sede":"01","academia":"04","ondas":"06","infantis":"08","quiosque":"13","areia":"11","rio lento":"07","campo":"12","arena":"14","estacionamento":"18","trevo":"20","servicos":"15"};
+const MESN=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const mesLongo=m=>{const i=MESES.findIndex(x=>norm(m).startsWith(x.slice(0,3)));return i<0?m:MESN[i]+" de 20"+m.slice(-2)};
+const PARE=new Set("a o as os de da do das dos na no nas nos em e para pra pro com um uma uns umas que qual quais quanto quanta quantos quantas tem ter temos tenho vai vou precisa preciso me mostra mostrar ver quero saber sobre onde esta estao fica ficam eh por favor ai la isso esse essa este obra obras lista material materiais item itens metro metros metragem m quilo quilos kg peca pecas unidade unidades total como faz fazer feito sequencia metodo executar execucao deve devo pode posso dica cuidado usar usa usado vale fica ser sao foi qual quais tipo fala diz projeto".split(" "));
+const ALIAS={"ginasio":"03","quadra coberta":"03","poliesportivo":"03","aquecida":"02","restaurante":"01","sede":"01","academia":"04","ondas":"06","rio lento":"07","infantis":"08","quiosque":"13","areia":"11","campo":"12","arena":"14","estacionamento":"18","trevo":"20","servicos":"15","ete":"16","eta":"16","reservatorio":"16"};
 function obraDaFala(qn){
   for(const o of D.obras){const nn=norm(o[1]);if(nn.length>3&&qn.includes(nn))return o[0]}
-  for(const [k,v] of Object.entries(ALIAS)) if(qn.includes(k)&&obra(v)) return v;
+  for(const [k,v] of Object.entries(ALIAS)) if(new RegExp("\\b"+k+"\\b").test(qn)&&obra(v)) return v;
   const m=qn.match(/\bobra (\d{1,2})\b/);if(m){const n=m[1].padStart(2,"0");if(obra(n))return n}
   return null}
 const nBRq=s=>parseFloat(String(s).replace(/\./g,"").replace(",","."))||0;
 const fmtQ=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:1});
+const naObra=n=>{const nm=obra(n)[1];return (/^(Sede|Academia|Arena|Piscina|Quadras|Área|Obras|Casas|Piscinas)/.test(nm)?(/^(Quadras|Obras|Casas|Piscinas)/.test(nm)?"nas ":"na "):"no ")+nm};
+const juntar=a=>a.length<2?(a[0]||""):a.slice(0,-1).join(", ")+" e "+a[a.length-1];
+const curto=d=>d.split(" – ").filter(x=>!/^barra \d/.test(x)).slice(0,2).join(" – ").replace(/\s*\(.*?\)\s*/g," ").trim();
+const unid=(q,u)=>{const m=u.match(/^barra (\d+) m$/);if(m)return (q===1?"barra":"barras")+" de "+m[1]+" m";if(u==="un")return q===1?"unidade":"unidades";if(u==="peça")return q===1?"peça":"peças";return u};
+const tokens=(qn,n)=>{const on=n?norm(obra(n)[1]).split(" "):[];
+  return qn.split(" ").filter(t=>t&&!PARE.has(t)&&!on.includes(t)&&!Object.keys(ALIAS).some(k=>k.split(" ").includes(t)))
+    .map(t=>t.replace(/mm$/,"")).filter(Boolean).map(t=>t.length>5&&/[rlz]es$/.test(t)?t.slice(0,-2):t.length>4&&t.endsWith("s")?t.slice(0,-1):t)};
+let KBN=null;
+function doGuia(qn,n){if(!D.guias)return null;const ts=tokens(qn,n).filter(t=>t.length>2);if(!ts.length)return null;
+  const sc=D.guias.map((g,i)=>{const k=norm(g.k+" "+g.t);let s=0;ts.forEach(t=>{if(k.includes(t))s+=t.length>5?2:1});if(n){if(g.o===n)s+=3;else if(g.o!=="00"&&!(g.o==="05"&&["05","06","07","08","02"].includes(n)))s-=3}return[s,i]}).filter(x=>x[0]>=2).sort((a,b)=>b[0]-a[0]);
+  if(!sc.length)return null;const g=D.guias[sc[0][1]];const dk=g.r.split(/[ ,]/)[0].toLowerCase();
+  return {t:g.x,l:[],h:D.docs[dk]?"#doc-"+dk:(g.o!=="00"?"#obra-"+g.o:"#inicio"),hl:D.docs[dk]?"Abrir a prancha "+dk.toUpperCase():"Abrir a obra",ref:"Fonte: "+g.r,kb:1}}
+function doKB(qn,n){const gg=doGuia(qn,n);if(gg)return gg;if(!D.kb)return null;if(!KBN)KBN=D.kb.map(e=>norm(e[0]+" "+e[1].join(" ")));
+  const ts=tokens(qn,n).filter(t=>t.length>2||/^\d/.test(t)); if(!ts.length) return null;
+  const sc=D.kb.map((e,i)=>{let s=0;ts.forEach(t=>{if(KBN[i].includes(t))s+=t.length>5?2:1});if(n){if(e[2].includes(n))s+=1.5;else if(!e[2].includes("00"))s-=1}return [s,i]}).filter(x=>x[0]>0).sort((a,b)=>b[0]-a[0]);
+  const min=Math.max(2,Math.min(4,ts.length*1.2));const top=sc.filter(x=>x[0]>=min).slice(0,3);
+  if(!top.length) return null;
+  const es=top.map(x=>D.kb[x[1]]),ref=es[0][1][0],dk=ref.toLowerCase();
+  const frase=t=>t.replace(/\s+$/,"").replace(/([^.])$/,"$1.");
+  let t=`Pelo projeto (${ref}${n?", "+obra(n)[1]:""}): ${frase(es[0][0])}`;
+  if(es[1]) t+=` Também está anotado${es[1][1][0]!==ref?" na "+es[1][1][0]:""}: ${frase(es[1][0])}`;
+  return {t,l:es.slice(2).map(e=>e[1][0]+": "+e[0]),h:D.docs[dk]?"#doc-"+dk:"#inicio",hl:D.docs[dk]?"Abrir a prancha "+ref:"Início",kb:1}}
 function responder(q){
-  const qn=norm(q).replace(/[?!.,;]/g," ").replace(/\s+/g," ").trim(); if(qn.length<3) return null;
-  const n=obraDaFala(qn), on=n?norm(obra(n)[1]):"";
-  // mês
-  const mi=MESES.findIndex(m=>qn.includes(m)); const an=(qn.match(/20(27|28)/)||[])[1];
-  if(mi>=0||/cronograma|previsto|quando|prazo|comeca|termina/.test(qn)){
+  const qn=norm(q).replace(/[?!.,;:]/g," ").replace(/\s+/g," ").trim(); if(qn.length<3) return null;
+  const n=obraDaFala(qn);
+  const como=/\b(como|fundacao|montagem|montar|fixar|instalar|executa|assentar|sequencia|metodo|procedimento|deve|devo|cuidado|dica|por que|porque|qual o|qual a|pode|norma|especificacao|tipo de)\b/.test(qn);
+  // mês / cronograma
+  const mi=MESES.findIndex(m=>new RegExp("\\b"+m.slice(0,4)).test(qn)); const an=(qn.match(/20(27|28)/)||[])[1];
+  if(mi>=0||/cronograma|previsto|quando|prazo|comeca|termina|entrega/.test(qn)){
     const lin=n?(D.linha[n]||[]):null;
-    if(mi>=0){const idx=D.meses.map((m,i)=>[m,i]).filter(([m])=>m.startsWith(D.meses[mi].slice(0,3))||norm(m).startsWith(MESES[mi].slice(0,3))).map(x=>x[1]);
+    if(mi>=0){const idx=D.meses.map((m,i)=>i).filter(i=>norm(D.meses[i]).startsWith(MESES[mi].slice(0,3)));
       const ix=idx.find(i=>!an||D.meses[i].endsWith(an))??idx[0]; if(ix==null) return null;
       const at=D.crono.filter(c=>c[1][ix]&&(!lin||lin.includes(c[0]))).map(c=>c[0]);
-      return {t:`Em ${D.meses[ix]}${n?" na obra "+obra(n)[1]:""}: ${at.length?at.length+" frente"+(at.length>1?"s":"")+" em andamento":"nada previsto"}.`,l:at.slice(0,12),h:"#mes",hl:"Abrir cronograma do mês"}}
-    if(lin&&lin.length){const l=lin.map(nm=>{const c=D.crono.find(x=>x[0]===nm);if(!c)return null;const a=c[1].indexOf(1),b=c[1].lastIndexOf(1);return a<0?null:`${nm}: de ${D.meses[a]} a ${D.meses[b]}`}).filter(Boolean);
-      return {t:`Cronograma da obra ${obra(n)[1]}:`,l,h:"#cronograma",hl:"Abrir cronograma geral"}}
+      const ml=mesLongo(D.meses[ix]);
+      const t=!at.length?`Em ${ml} não tem nada previsto${n?" "+naObra(n):""} no cronograma.`:
+        n?`Em ${ml} ${naObra(n)} está previsto: ${juntar(at)}.`:`Em ${ml} o cronograma tem ${at.length} frente${at.length>1?"s":""} trabalhando ao mesmo tempo: ${juntar(at.slice(0,6))}${at.length>6?` e mais ${at.length-6}`:""}.`;
+      return {t,l:at.length>6?at.slice(6):[],h:"#mes",hl:"Abrir o cronograma do mês"}}
+    if(lin&&lin.length){const l=lin.map(nm=>{const c=D.crono.find(x=>x[0]===nm);if(!c)return null;const a=c[1].indexOf(1),b=c[1].lastIndexOf(1);return a<0?null:[nm,mesLongo(D.meses[a]),mesLongo(D.meses[b])]}).filter(Boolean);
+      if(l.length){const t=l.length===1?`${l[0][0]} está prevista de ${l[0][1]} a ${l[0][2]}.`:`${naObra(n).replace(/^\w/,c=>c.toUpperCase())} o cronograma tem ${l.length} frentes: `+juntar(l.map(x=>`${x[0]} (${x[1]} a ${x[2]})`))+".";
+        return {t,h:"#cronograma",hl:"Abrir o cronograma geral"}}}
   }
-  // pranchas / projeto
-  if(/prancha|projeto|planta|desenho|pdf/.test(qn)&&n){const ds=(D.obraDocs[n]||[]).map(k=>D.docs[k]).filter(Boolean);
-    return {t:`A obra ${obra(n)[1]} tem ${ds.length} documento${ds.length===1?"":"s"} de projeto.`,l:ds.slice(0,8).map(d=>d.c+" · "+d.t),h:"#obra-"+n+"-docs",hl:"Abrir projeto e documentos"}}
+  // pranchas
+  if(/prancha|planta|desenho|pdf|documento/.test(qn)&&n&&!como){const ds=(D.obraDocs[n]||[]).map(k=>D.docs[k]).filter(Boolean);
+    const ex=ds.slice(0,2).map(d=>`a ${d.c} (${d.t.split(" - ").pop().toLowerCase()})`);
+    return {t:ds.length?`${naObra(n).replace(/^\w/,c=>c.toUpperCase())} tem ${ds.length} prancha${ds.length>1?"s":""} no guia, como ${juntar(ex)}. Toque abaixo para ver todas.`:`Ainda não tem prancha ${naObra(n)} no guia.`,h:"#obra-"+n+"-docs",hl:"Abrir projeto e documentos"}}
+  if(como){const k=doKB(qn,n);if(k)return k}
   // material
-  let ts=qn.split(" ").filter(t=>t&&!PARE.has(t)&&!(n&&on.split(" ").includes(t))&&!Object.keys(ALIAS).some(k=>k.split(" ").includes(t)));
-  ts=ts.map(t=>t.replace(/mm$/,"")).filter(Boolean).map(t=>t.length>5&&/[rlz]es$/.test(t)?t.slice(0,-2):t.length>4&&t.endsWith("s")?t.slice(0,-1):t).map(t=>/^\d+$/.test(t)&&+t<60?t+",":t);
-  if(!ts.length&&n){const r=(D.resumo[n]||[]);return {t:`${obra(n)[0]} ${obra(n)[1]} – ${obra(n)[2]}. ${nItens(n)} itens na lista e ${(D.obraDocs[n]||[]).length} documentos.`,l:r.slice(0,5),h:"#obra-"+n,hl:"Abrir a obra"}}
+  const ts=tokens(qn,n).map(t=>/^\d+$/.test(t)&&+t<60?t+",":t);
+  if(!ts.length&&n){const r=(D.resumo[n]||[]),o=obra(n);return {t:`${o[1]} (${o[2]}): ${r.slice(0,2).map(x=>x.replace(/\.$/,"")).join(". ")}${r.length?".":""} No guia tem ${nItens(n)} itens na lista e ${(D.obraDocs[n]||[]).length} pranchas dessa obra.`,h:"#obra-"+n,hl:"Abrir a obra"}}
   if(!ts.length) return null;
   const acha=amplo=>{const its=[];Object.entries(D.mat).forEach(([o,ps])=>{if(n&&o!==n)return;ps.forEach(p=>p.g.forEach(g=>g[1].forEach(it=>{const k=norm(it[0]+" "+(it[4]||"")+(amplo?" "+p.p+" "+g[0]:""));if(ts.every(t=>k.includes(t.replace(/,$/,"")))&&(!ts.some(t=>t.endsWith(","))||ts.filter(t=>t.endsWith(",")).every(t=>norm(it[0]).match(new RegExp("ø ?"+t.slice(0,-1)+"(,|\\b| )")))))its.push([o,p,it])})))});return its};
   let its=acha(false);if(!its.length)its=acha(true);
-  if(!its.length) return null;
-  const us=[...new Set(its.map(x=>x[2][1]))],tot=us.length===1?its.reduce((a,x)=>a+nBRq(x[2][2]),0):null;
-  const t=(tot!=null?`${fmtQ(tot)} ${us[0]}`:`${its.length} itens`)+(n?` na obra ${obra(n)[1]}`:` em ${new Set(its.map(x=>x[0])).size} obra(s)`)+".";
-  return {t,l:its.slice(0,8).map(([o,p,it])=>`${fmtQ(nBRq(it[2]))} ${it[1]} · ${it[0]} · ${n?p.p:obra(o)[1]}`),mais:its.length>8?its.length-8:0,h:"#obra-"+(n||its[0][0])+"-mat-"+its[0][1].s,hl:"Abrir na lista de material"}}
-const cardResp=(r,voz)=>r?`<div class="resp"><span class="rtag">Resposta${voz?" por voz":""}</span><p>${esc(r.t)}</p>${r.l&&r.l.length?`<ul>${r.l.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}${r.mais?`<p class="rmais">e mais ${r.mais}…</p>`:""}<a class="rlink" href="${r.h}">${esc(r.hl)} ›</a><span class="rnota">Resposta montada só com os dados deste guia.</span></div>`:"";
+  if(!its.length){const k=doKB(qn,n);return k||(como?{t:`Procurei nas pranchas e nas listas${n?" "+naObra(n):""} e isso não está definido no projeto que está no guia.`,h:n?"#obra-"+n+"-docs":"#inicio",hl:n?"Ver as pranchas da obra":"Início"}:null)}
+  const us=[...new Set(its.map(x=>x[2][1]))],nomes=[...new Set(its.map(x=>curto(x[2][0])))];
+  const det=its.slice(0,10).map(([o,p,it])=>`${fmtQ(nBRq(it[2]))} ${it[1]} · ${it[0]} · ${n?p.p:obra(o)[1]}`);
+  let t;
+  if(us.length===1){const tot=its.reduce((a,x)=>a+nBRq(x[2][2]),0);
+    const porP={};its.forEach(([o,p,it])=>{const k=n?p.p:obra(o)[1];porP[k]=(porP[k]||0)+nBRq(it[2])});const ps=Object.entries(porP).sort((a,b)=>b[1]-a[1]);
+    t=`${n?naObra(n).replace(/^\w/,c=>c.toUpperCase())+" são":"No total são"} ${fmtQ(tot)} ${unid(tot,us[0])}${nomes.length===1?" de "+nomes[0].charAt(0).toLowerCase()+nomes[0].slice(1):""}.`;
+    const lw=x=>n?x.toLowerCase():x;
+    if(ps.length===2)t+=` Desse total, ${fmtQ(ps[0][1])} vão para ${lw(ps[0][0])} e ${fmtQ(ps[1][1])} para ${lw(ps[1][0])}.`;
+    else if(ps.length>2)t+=` A maior parte, ${fmtQ(ps[0][1])}, vai para ${lw(ps[0][0])}; o resto se divide em mais ${ps.length-1} ${n?"partes":"obras"}.`;
+    if(nomes.length>1&&its.length<=4)t+=` São ${juntar(its.map(([o,p,it])=>{const d=it[0].split(" – ")[0].split(",")[0];return fmtQ(nBRq(it[2]))+" de "+d.charAt(0).toLowerCase()+d.slice(1)}))}.`;
+    const nt=its.map(x=>x[2][5]).find(x=>x&&/kg\/(barra|peça|painel)/.test(x));if(nt&&nomes.length===1)t+=` Para conferir o peso: ${nt.split(" · ")[0].replace("Gerdau: ","")}.`}
+  else{t=`Achei ${its.length} itens ${naObra(n||its[0][0])==="" ?"":""}${n?naObra(n):"em "+new Set(its.map(x=>x[0])).size+" obras"} que batem com a pergunta. Os principais são ${juntar(its.slice(0,3).map(([o,p,it])=>`${curto(it[0]).charAt(0).toLowerCase()+curto(it[0]).slice(1)} (${fmtQ(nBRq(it[2]))} ${it[1]})`))}.`}
+  return {t,l:det,mais:its.length>10?its.length-10:0,h:"#obra-"+(n||its[0][0])+"-mat-"+its[0][1].s,hl:"Abrir na lista de material"}}
+const cardResp=(r,voz)=>r?`<div class="resp"><span class="rtag">${voz?"Resposta por voz":"Resposta"}</span><p>${esc(r.t)}</p>${r.l&&r.l.length?`<details><summary>${r.kb?"Mais anotações do projeto":"Ver os itens ("+(r.l.length+(r.mais||0))+")"}</summary><ul>${r.l.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>${r.mais?`<p class="rmais">e mais ${r.mais}…</p>`:""}</details>`:""}<a class="rlink" href="${r.h}">${esc(r.hl)} ›</a><span class="rnota">${r.ref?esc(r.ref)+" · ":""}Resposta tirada só do que está no guia desta obra.</span></div>`:"";
 let REC=null;
 function ouvir(q,onFim){const SR=window.SpeechRecognition||window.webkitSpeechRecognition,b=document.getElementById("mic");
   if(!SR){q.focus();toast("Neste aparelho, toque no microfone do teclado para falar.");return}
@@ -238,7 +280,7 @@ function ouvir(q,onFim){const SR=window.SpeechRecognition||window.webkitSpeechRe
   REC.onerror=e=>{toast(e.error==="not-allowed"||e.error==="service-not-allowed"?"Microfone bloqueado. Libere o microfone ou use o do teclado.":e.error==="network"?"O reconhecimento de voz precisa de internet. Use o microfone do teclado.":"Não entendi. Tente de novo.")};
   REC.onend=()=>{b.classList.remove("on");q.placeholder="Buscar ou perguntar sobre a obra";REC=null;if(fim)onFim(fim)};
   REC.start()}
-function falar(r){try{if(!r||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(r.t+(r.l&&r.l.length?" "+r.l.slice(0,3).join(". "):""));u.lang="pt-BR";speechSynthesis.cancel();speechSynthesis.speak(u)}catch(_){}}
+function falar(r){try{if(!r||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(r.t.replace(/Ø/g,"diâmetro ").replace(/ x /g," por "));u.lang="pt-BR";speechSynthesis.cancel();speechSynthesis.speak(u)}catch(_){}}
 const linhaRes=x=>`<a class="res" href="${x.h}"><span class="tipo ${x.t==="prancha"?"prancha":x.t==="material"||x.t==="parte"?"material":""}">${x.t}</span><span style="min-width:0"><span class="nome">${esc(x.n)}</span><br><span class="onde">${esc(x.w)}</span></span></a>`;
 
 function inicio(){
@@ -246,7 +288,7 @@ function inicio(){
   app.innerHTML=`
   <header class="topo"><img class="logo" src="${LOGO}" alt="Villa Rica Complexo de Lazer"><span class="sub">Guia de Obra Inteligente</span><span class="sub2">Complexo Villa Rica</span></header>
   <div class="busca"><label for="q" hidden>Buscar</label>${LUPA}<input id="q" type="search" placeholder="Buscar ou perguntar sobre a obra" autocomplete="off" enterkeyhint="go"><button id="mic" type="button" aria-label="Perguntar por voz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11z"/></svg></button></div>
-  <p class="dica">Toque no microfone e pergunte. Ex.: <b>quantas barras de 10 na piscina aquecida</b>, <b>chapa de base da sede</b>, <b>o que tem em março</b>, <b>pranchas da academia</b></p>
+  <p class="dica">Toque no microfone e pergunte. Ex.: <b>quantas barras de 10 na piscina aquecida</b>, <b>como fixar os chumbadores da sede</b>, <b>como é o graute</b>, <b>o que tem em março</b></p>
   <div id="resp"></div><div class="resultados" id="res"></div>
   <div class="secao"><a class="pilula" href="#compras">${CAP} Compras da obra</a></div>
   <div class="secao" style="margin-top:12px"><a class="pilula verde" href="#calc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm1 3v4h10V5zm0 7v2h2v-2zm4 0v2h2v-2zm4 0v6h2v-6zm-8 4v2h2v-2zm4 0v2h2v-2z"/></svg> Calcular metragem cúbica</a></div>
