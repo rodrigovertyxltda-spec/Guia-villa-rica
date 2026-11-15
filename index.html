@@ -301,6 +301,7 @@ function inicio(){
   <div class="secao"><h2>Páginas gerais</h2><div class="gerais">
    <a class="geral" href="#mes"><span class="ic">M</span><span><b>Cronograma do mês</b><span>O que está previsto em cada obra no mês</span></span></a>
    <a class="geral" href="#cronograma"><span class="ic">C</span><span><b>Cronograma geral</b><span>Jan/2027 a dez/2028, por obra</span></span></a>
+   <a class="geral" href="${window.API?"#baixar":"https://rodrigovertyxltda-spec.github.io/Guia-villa-rica/#baixar"}" ${window.API?"":'target="_blank" rel="noopener"'}><span class="ic">↓</span><span><b>Baixar projetos</b><span>PDF por obra e CAD por disciplina, só com senha${window.API?"":" (no aplicativo)"}</span></span></a>
    <a class="geral" href="#historico"><span class="ic">H</span><span><b>Histórico de arquivos</b><span>Quem trocou ou anexou projeto, e quando</span></span></a>
    <a class="geral" href="#compras"><span class="ic">$</span><span><b>Compras da obra</b><span>${totItens.toLocaleString("pt-BR")} itens, por obra e por parte</span></span></a></div></div>
   <div class="secao"><h2>Obras</h2><div class="grade"><a class="obra den" href="#denuncias"><span class="num">${CAM}</span><span class="nm">Denúncias</span><span class="st">Tirar foto de algo errado</span></a>${D.obras.map(o=>{const nd=(D.obraDocs[o[0]]||[]).length,ni=nItens(o[0]);
@@ -338,7 +339,7 @@ function obraDocs(n){
   const o=obra(n), docs=D.obraDocs[n]||[];
   const nv=novosDaObra(n);
   const offOk=(()=>{try{return localStorage.getItem("vr-off-"+n)==="1"}catch(_){return false}})();
-  app.innerHTML=cabObra(o,"-docs")+`<button class="pilula verde" data-off="${n}" style="margin:4px 0 10px;padding:12px">${offOk?"✓ Pranchas desta obra salvas · atualizar":"Baixar pranchas desta obra para usar sem internet"}</button>`+(podeTrocar()?`<div style="display:flex;gap:8px;margin:4px 0 12px"><button class="pilula clara" data-tr="novo|${n}" style="flex:1;padding:12px">+ Anexar arquivo</button><a class="pilula clara" href="#historico" style="flex:none;width:auto;padding:12px 18px">Histórico</a></div>`:"")+
+  app.innerHTML=cabObra(o,"-docs")+`<button class="pilula verde" data-off="${n}" style="margin:4px 0 10px;padding:12px">${offOk?"✓ Pranchas desta obra salvas · atualizar":"Baixar pranchas desta obra para usar sem internet"}</button>`+`<a class="pilula clara" href="${window.API?"#baixar-"+n:"https://rodrigovertyxltda-spec.github.io/Guia-villa-rica/#baixar-"+n}" ${window.API?"":'target="_blank" rel="noopener"'} style="margin:4px 0 10px;padding:12px">↓ Baixar arquivos desta obra (com senha)</a>`+(podeTrocar()?`<div style="display:flex;gap:8px;margin:4px 0 12px"><button class="pilula clara" data-tr="novo|${n}" style="flex:1;padding:12px">+ Anexar arquivo</button><a class="pilula clara" href="#historico" style="flex:none;width:auto;padding:12px 18px">Histórico</a></div>`:"")+
   (nv.length?`<div class="dv" style="margin-bottom:14px"><div class="dv-h"><b>Arquivos anexados</b><span>${nv.length}</span></div>${nv.map(linhaNovo).join("")}</div>`:"")+`<div style="display:flex;flex-direction:column;gap:14px">${
    D.div.map(d=>{const ks=docs.filter(k=>D.docs[k].d===d[0]); if(!ks.length) return "";
     return `<div class="dv"><div class="dv-h"><b>${d[1]}</b><span>${d[0]} · ${ks.length}</span></div>${ks.map(docLink).join("")}</div>`}).join("")||`<p class="vazio">Sem documentos nesta obra.</p>`}</div>`;
@@ -674,7 +675,7 @@ function abreTroca(acao,k){
 }
 function historico(){
   app.innerHTML=`<a class="voltar" href="#inicio">← Início</a><h1 style="font-size:2rem;margin-top:8px">Histórico de arquivos</h1>
-  <p style="color:var(--txt-2);margin:6px 4px 12px">Quem trocou, tirou ou anexou arquivo, deu baixa por NF, e quando.</p><p id="pend" class="integra" style="margin:0 0 12px"></p><section class="bloco" id="hl"><p class="vazio">${DB?"Carregando…":"Histórico indisponível."}</p></section>`;
+  <p style="color:var(--txt-2);margin:6px 4px 12px">Quem trocou, tirou ou anexou arquivo, baixou projeto, deu baixa por NF, e quando.</p><p id="pend" class="integra" style="margin:0 0 12px"></p><section class="bloco" id="hl"><p class="vazio">${DB?"Carregando…":"Histórico indisponível."}</p></section>`;
   pendInfo();if(!DB) return;
   DB.collection("historico").orderBy("em","desc").limit(300).get().then(s=>{const el=document.getElementById("hl");if(!el)return;
     el.innerHTML=s.empty?`<p class="vazio">Nenhuma troca até agora.</p>`:s.docs.map(x=>{const v=x.data()||{};return `<div class="hrow"><b>${esc(v.nome)} <small>${esc(v.papel)}</small></b><span>${esc(v.acao)} <a href="#doc-${esc(v.doc)}">${esc(v.cod)}</a> ${esc(v.titulo)}${v.obra?" · obra "+esc(v.obra):""}</span><small>${dt(v.em)}</small></div>`}).join("")})
@@ -813,6 +814,59 @@ async function baixarObra(n,bt){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-off]");if(!b)return;e.preventDefault();baixarObra(b.dataset.off,b)});
 async function pendInfo(){try{const n=await API.pendentes();const el=document.getElementById("pend");if(el) el.textContent=n?`${n} registro(s) guardado(s) neste aparelho, aguardando a integração com o sistema.`:""}catch(_){}}
 if("serviceWorker" in navigator) addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+/* ===== Baixar projetos (só com senha) ===== */
+{const st=document.createElement("style");st.textContent=".dlb>span:nth-child(2){flex:1;text-align:left}.dlb .ok{flex:none;font-weight:800;color:var(--verde-tx)}";document.head.appendChild(st)}
+let DLJ=null,DLK=null,DLP="",DLN="";
+const b64u=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function dlLista(){if(!DLJ){const r=await fetch("dl/dl.json",{cache:"no-store"});if(!r.ok)throw 0;DLJ=await r.json()}return DLJ}
+async function dlAbrir(senha){const j=await dlLista(),pw=new TextEncoder().encode(senha.trim().toLowerCase());
+  const base=await crypto.subtle.importKey("raw",pw,"PBKDF2",false,["deriveKey"]);
+  for(const u of j.u){try{const kek=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64u(u.s),iterations:j.it,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+    const raw=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64u(u.iv)},kek,b64u(u.k));return crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"])}catch(_){}}
+  throw new Error("senha")}
+const mb=n=>(n/1048576).toLocaleString("pt-BR",{maximumFractionDigits:1})+" MB";
+function dlLogin(depois){let nm="";try{nm=localStorage.getItem("vr-tr-nome")||""}catch(_){}
+  const m=document.createElement("div");m.id="mt";m.className="modal";
+  m.innerHTML=`<form class="login" style="margin:0;width:100%"><h1 style="font-size:1.4rem">Baixar projetos</h1><p>Só para quem tem senha. Digite seu nome e a senha.</p>
+   <div class="campo"><i style="background:var(--folha)"></i><input id="tn" placeholder="Seu nome" value="${esc(nm)}" maxlength="60" autocomplete="name"></div>
+   <div class="campo"><i style="background:var(--terra)"></i><input id="ts" type="password" placeholder="Senha" autocomplete="current-password"></div>
+   <button class="pilula" type="submit" id="tb">Liberar</button><button class="pilula clara" type="button" id="tx">Fechar</button>
+   <p id="te" hidden style="color:#DC2626;font-weight:800;margin:0;text-align:center"></p></form>`;
+  document.body.appendChild(m);const $=id=>m.querySelector("#"+id);$("tx").onclick=()=>m.remove();setTimeout(()=>$(nm?"ts":"tn").focus(),50);
+  m.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const nome=$("tn").value.trim(),er=t=>{$("te").textContent=t;$("te").hidden=false};
+    if(nome.length<2) return er("Digite seu nome.");if(!$("ts").value) return er("Digite a senha.");
+    $("tb").disabled=true;$("tb").textContent="Conferindo…";
+    try{DLK=await dlAbrir($("ts").value);DLN=nome;try{localStorage.setItem("vr-tr-nome",nome)}catch(_){}m.remove();{const en=document.getElementById("dlent");if(en)en.remove()}depois&&depois()}
+    catch(x){$("tb").disabled=false;$("tb").textContent="Liberar";er(x&&x.message==="senha"?"Senha errada.":"Sem internet. Conecte para baixar.")}});
+}
+async function dlBaixar(id,bt){const f=(await dlLista()).f.find(x=>x.id===id);if(!f)return;
+  if(!DLK) return dlLogin(()=>dlBaixar(id,bt));
+  const txt=bt.innerHTML;bt.disabled=true;
+  try{const r=await fetch("dl/"+id+".bin");if(!r.ok||!r.body)throw 0;const tot=+r.headers.get("content-length")||f.sz,rd=r.body.getReader(),parts=[];let got=0;
+    for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;bt.innerHTML=`<b>Baixando… ${Math.min(99,Math.round(got*100/tot))}%</b>`}
+    const all=new Uint8Array(got);let p=0;for(const c of parts){all.set(c,p);p+=c.length}
+    bt.innerHTML="<b>Abrindo…</b>";
+    const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:all.slice(0,12)},DLK,all.slice(12));
+    const blob=new Blob([plain],{type:f.m}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=f.n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    bt.innerHTML=txt.replace(/<span class="ok">.*?<\/span>/,"")+'<span class="ok">✓ Baixado</span>';
+    if(DB) DB.collection("historico").add({acao:"baixou",cod:f.n,titulo:f.t,obra:f.o||"",nome:DLN,papel:"",em:new Date().toISOString(),doc:""}).catch(()=>{});
+  }catch(_){bt.innerHTML=txt;toast("Não deu para baixar. Confira a internet e tente de novo.")}
+  bt.disabled=false}
+function dlItem(f){return `<button class="geral dlb" data-dl="${f.id}"><span class="ic">${f.g==="cad"?"CAD":"PDF"}</span><span><b>${esc(f.g==="cad"?f.t:obra(f.o)[0]+" "+obra(f.o)[1])}</b><span>${esc(f.g==="cad"?"Pranchas em DXF e PDF, todas as obras":f.t)} · ${mb(f.sz)}</span></span></button>`}
+async function baixarPag(n){
+  app.innerHTML=`<a class="voltar" href="${n?"#obra-"+n+"-docs":"#inicio"}">← ${n?"Voltar à obra":"Início"}</a><h1 style="font-size:2rem;margin-top:8px">Baixar projetos</h1><div id="dlc"><p class="aviso">Carregando…</p></div>`;
+  let j;try{j=await dlLista()}catch(_){document.getElementById("dlc").innerHTML='<p class="aviso">Sem internet. Conecte para baixar os arquivos de projeto.</p>';return}
+  const el=document.getElementById("dlc");if(!el)return;
+  const pdf=j.f.filter(f=>f.g==="pdf"&&(!n||f.o===n)),cad=j.f.filter(f=>f.g==="cad");
+  el.innerHTML=`<p style="color:var(--txt-2);margin:6px 4px 12px">${DLK?"Liberado para "+esc(DLN)+". Toque no arquivo para baixar.":"Só para quem tem senha. Toque no arquivo e digite nome e senha."} Plantas de posicionamento ficam de fora até a planta definitiva.</p>
+   ${DLK?"":`<button class="pilula" id="dlent" style="margin-bottom:12px">Entrar com senha</button>`}
+   <div class="secao"><h2>${n?"Projeto desta obra (PDF)":"Projeto por obra (PDF)"}</h2><div class="gerais">${pdf.map(dlItem).join("")||'<p class="aviso">Sem PDF para esta obra.</p>'}</div></div>
+   <div class="secao"><h2>Arquivos CAD por disciplina</h2><div class="gerais">${cad.map(dlItem).join("")}</div></div>
+   ${n?`<div class="secao"><a class="pilula clara" href="#baixar">Ver arquivos de todas as obras</a></div>`:""}
+   <p class="aviso">Cada download fica registrado no histórico com o nome de quem baixou.</p>`;
+  const en=document.getElementById("dlent");if(en)en.onclick=()=>dlLogin(()=>baixarPag(n));
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-dl]");if(!b)return;e.preventDefault();dlBaixar(b.dataset.dl,b)});
 
 function rota(){
   if(!D) return;
@@ -824,6 +878,7 @@ function rota(){
   if((m=h.match(/^obra-(\d\d)-mat(?:-([a-z0-9-]+))?$/))) {obraMat(m[1],m[2]);return scrollTo(0,0)}
   if((m=h.match(/^doc-([a-z0-9-]+)-orig$/))) return verDoc(m[1],true);
   if((m=h.match(/^doc-([a-z0-9-]+)$/))) return verDoc(m[1]);
+  if((m=h.match(/^baixar(?:-(\d\d))?$/))) {if(typeof baixarPag==="function"){baixarPag(m[1]);return scrollTo(0,0)}location.href="https://rodrigovertyxltda-spec.github.io/Guia-villa-rica/#"+h;return}
   if(h==="historico") {historico();return scrollTo(0,0)}
   if(h==="denuncias") {denuncias();return scrollTo(0,0)}
   if(h==="compras") {compras();return scrollTo(0,0)}
