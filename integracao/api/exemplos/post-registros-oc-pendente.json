@@ -1,0 +1,7 @@
+{"dispositivo":"d_8f2a91c3","registros":[{"colecao":"ocs","id":"o_lq3m1a0_91d2","dados":{
+ "status":"pendente","num":"151126-02","cot":"c_lq3k9x2_4b7e","cotNum":"151126-01","orc":"r_lq3l7z1_0a3c",
+ "forn":{"nome":"FORNECEDOR EXEMPLO LTDA","cnpj":"00.000.000/0001-00","cidade":"Conselheiro Lafaiete/MG","email":"vendas@exemplo.com.br"},
+ "prop":"PROP-123","propData":"16/11/2026","pag":{"forma":"boleto","parc":2,"venc":"28/56 dias"},"frete":"CIF","obsImp":"ICMS incluso. IPI 0%.",
+ "titulo":"Ferragem e chapas – piscina aquecida","destino":"Galpão da piscina aquecida",
+ "itens":[{"d":"Vergalhão CA-50 Ø 10,0 mm – barra 12 m","u":"barra 12 m","q":459,"pu":0,"icms":0,"ipi":0,"cf":"","tot":0,"r":[{"c":"VR-02-FE-0005","o":"02","q":459}]}],
+ "total":0,"nome":"Comprador","em":"2026-11-16T10:00:00.000Z"}}]}

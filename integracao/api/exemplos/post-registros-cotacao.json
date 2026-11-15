@@ -1,0 +1,6 @@
+{"dispositivo":"d_8f2a91c3","registros":[{"colecao":"cotacoes","id":"c_lq3k9x2_4b7e","dados":{
+ "num":"151126-01","titulo":"Ferragem e chapas – piscina aquecida","destino":"Galpão da piscina aquecida","prazo":"20/11/2026","agr":true,
+ "linhas":[
+  {"d":"Vergalhão CA-50 Ø 10,0 mm – barra 12 m","u":"barra 12 m","r":[{"c":"VR-02-FE-0005","k":"02|ferragem-aco-e-telas|Galpão da piscina aquecida (fundação e piso)|Vergalhão CA-50 Ø 10,0 mm – barra 12 m","o":"02","q":459}]},
+  {"d":"Chapa cortada ASTM A36 854 x 460 mm – esp. 51 mm – 6 furos Ø51 mm – base do pilar P-C1 W 610 x 113,0","u":"peça","r":[{"c":"VR-02-EM-0006","k":"02|estrutura-metalica|Chapas de base e chumbadores|...","o":"02","q":18}]}
+ ],"nome":"Comprador","em":"2026-11-15T16:40:00.000Z"}}]}

@@ -1,0 +1,3 @@
+{"dispositivo":"d_33b1e7aa","registros":[{"colecao":"ocs","id":"o_lq3m1a0_91d2","dados":{
+ "status":"liberada","num":"151126-02","libNome":"Quem liberou","libEm":"2026-11-16T11:20:00.000Z",
+ "_obs":"o app reenvia o documento inteiro da OC; aqui só os campos que mudam, para leitura"}}]}

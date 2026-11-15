@@ -1,0 +1,366 @@
+openapi: 3.0.3
+info:
+  title: Guia de Obra Villa Rica – API de sincronização
+  version: "1.0.0"
+  description: |
+    Contrato que o aplicativo publicado (https://rodrigovertyxltda-spec.github.io/Guia-villa-rica/) já chama hoje
+    (arquivo `api.js` do repositório rodrigovertyxltda-spec/Guia-villa-rica).
+
+    Como funciona:
+    - O app grava tudo no aparelho (IndexedDB) e marca cada registro como pendente.
+    - Quando há endereço da API configurado, sincroniza a cada 60 s, quando a internet volta,
+      3 s depois de abrir e logo depois de cada gravação.
+    - Envio: primeiro os arquivos (`POST /arquivos`), depois os registros em lotes de até 200 (`POST /registros`).
+    - Recebimento: `GET /registros?desde=` com o valor `agora` da última resposta.
+    - Se um registro local ainda está pendente, o app ignora a versão do servidor para ele até conseguir enviar.
+    - Reenvio do mesmo `colecao` + `id` = atualização (o servidor substitui `dados`).
+    - Nenhuma senha trafega. As senhas do app só abrem arquivos cifrados no próprio aparelho.
+
+    CORS: liberar a origem `https://rodrigovertyxltda-spec.github.io`, os cabeçalhos `Authorization, Content-Type`
+    e os métodos `GET, POST, OPTIONS`.
+
+    Configuração no app: Área financeira > senha master > Configurações > Endereço da API + Chave de acesso (token)
+    > Salvar > Testar conexão > Sincronizar agora.
+servers:
+  - url: https://api.exemplo.com.br/guia
+    description: Endereço a definir pelo sistema do Luiz (o app aceita qualquer URL HTTPS; barra final é removida)
+security:
+  - bearer: []
+paths:
+  /status:
+    get:
+      summary: Teste de conexão (botão "Testar conexão")
+      description: O app só olha o código HTTP. 200 = conectado.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {type: object, properties: {ok: {type: boolean, example: true}}}
+        "401": {$ref: "#/components/responses/SemAutorizacao"}
+  /arquivos:
+    post:
+      summary: Envia um arquivo (foto, PDF de NF, orçamento do fornecedor, prancha trocada)
+      description: |
+        Chamado antes do registro que referencia o arquivo (campo `asset`).
+        O app guarda a `url` devolvida no campo `_urlServ` do registro e manda o registro em seguida.
+        Outros aparelhos abrem o arquivo por essa `url`.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [id, arquivo]
+              properties:
+                id: {type: string, description: "id do arquivo no aparelho (= campo asset do registro)", example: "a_lq3k9x2_7f1c"}
+                arquivo: {type: string, format: binary, description: "conteúdo; nome do arquivo = id"}
+      responses:
+        "200":
+          description: Arquivo guardado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  id: {type: string, example: "a_lq3k9x2_7f1c"}
+                  url: {type: string, format: uri, example: "https://api.exemplo.com.br/guia/arquivos/a_lq3k9x2_7f1c"}
+        "401": {$ref: "#/components/responses/SemAutorizacao"}
+  /registros:
+    post:
+      summary: Envia registros criados ou alterados no aparelho
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/EnvioRegistros"}
+            examples:
+              cotacao: {externalValue: "exemplos/post-registros-cotacao.json"}
+              ordem_pendente: {externalValue: "exemplos/post-registros-oc-pendente.json"}
+              ordem_liberada: {externalValue: "exemplos/post-registros-oc-liberada.json"}
+      responses:
+        "200":
+          description: Registros gravados (qualquer 2xx serve; o app marca o lote como enviado)
+          content:
+            application/json:
+              schema: {type: object, properties: {ok: {type: array, items: {type: string}}}}
+        "401": {$ref: "#/components/responses/SemAutorizacao"}
+    get:
+      summary: Recebe o que mudou desde a última sincronização
+      parameters:
+        - name: desde
+          in: query
+          required: false
+          description: Valor `agora` da resposta anterior (ISO 8601). Vazio na primeira vez = tudo.
+          schema: {type: string, example: "2026-11-15T16:30:00.000Z"}
+      responses:
+        "200":
+          description: Registros alterados
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RespostaRegistros"}
+              examples:
+                exemplo: {externalValue: "exemplos/get-registros.json"}
+        "401": {$ref: "#/components/responses/SemAutorizacao"}
+  /sequencia/{tipo}:
+    post:
+      summary: Próximo número único de cotação ou ordem de compra
+      description: |
+        Formato DDMMAA-NN (data do dia + sequência contínua, não zera por dia).
+        Ordens de compra continuam a partir da OC 121126-01 (próxima = -02); cotações começam em -01.
+        Se a chamada falhar ou não houver internet, o app numera localmente no mesmo formato.
+      parameters:
+        - name: tipo
+          in: path
+          required: true
+          schema: {type: string, enum: [ocs, cotacoes]}
+      responses:
+        "200":
+          description: Número reservado
+          content:
+            application/json:
+              schema: {type: object, required: [num], properties: {num: {type: string, example: "151126-02"}}}
+        "401": {$ref: "#/components/responses/SemAutorizacao"}
+  /perguntar:
+    post:
+      summary: (OPCIONAL, ainda não chamado pelo app) IA do assistente da tela inicial
+      description: |
+        Hoje o app responde no aparelho, só com os dados do guia. Quando este endpoint existir, o app pode
+        perguntar ao servidor primeiro e usar a resposta local se falhar. A resposta tem que sair só do conteúdo
+        do guia (listas, pranchas, memoriais, cronograma), em texto curto e natural, e nunca trazer preço para
+        perfil sem acesso ao financeiro. Quando não estiver no projeto, dizer que não está definido.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pergunta: {type: string, example: "como vai ser feita a fundação do galpão da piscina"}
+                obra: {type: string, example: "02"}
+                perfil: {type: string, example: "publico"}
+      responses:
+        "200":
+          description: Resposta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  texto: {type: string}
+                  fontes: {type: array, items: {type: string}, example: ["EST-06", "MC-02"]}
+                  link: {type: string, example: "#doc-est-06"}
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer, description: "Token fixo configurado no app (Configurações > Chave de acesso)"}
+  responses:
+    SemAutorizacao:
+      description: Token ausente ou errado
+  schemas:
+    EnvioRegistros:
+      type: object
+      required: [dispositivo, registros]
+      properties:
+        dispositivo: {type: string, description: "id aleatório e fixo do aparelho", example: "d_8f2a91c3"}
+        registros:
+          type: array
+          maxItems: 200
+          items: {$ref: "#/components/schemas/Registro"}
+    Registro:
+      type: object
+      required: [colecao, id, dados]
+      properties:
+        colecao:
+          type: string
+          description: "Nome da coleção. Pode ter subcaminho (ex.: denuncias/{dispositivo}). A chave única é colecao + '/' + id."
+          enum: [cotacoes, orcamentos, ocs, produtos, fornecedores, baixas, fotos, troca, historico, "denuncias/{dispositivo}"]
+        id: {type: string, description: "gerado no aparelho", example: "c_lq3k9x2_4b7e"}
+        dados:
+          oneOf:
+            - $ref: "#/components/schemas/Cotacao"
+            - $ref: "#/components/schemas/Orcamento"
+            - $ref: "#/components/schemas/OrdemCompra"
+            - $ref: "#/components/schemas/Produto"
+            - $ref: "#/components/schemas/Fornecedor"
+            - $ref: "#/components/schemas/Baixa"
+            - $ref: "#/components/schemas/Foto"
+            - $ref: "#/components/schemas/Troca"
+            - $ref: "#/components/schemas/Historico"
+            - $ref: "#/components/schemas/Denuncias"
+    RespostaRegistros:
+      type: object
+      required: [registros, agora]
+      properties:
+        registros:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Registro"
+              - type: object
+                properties:
+                  atualizado: {type: string, description: "ISO 8601, quando o servidor gravou"}
+        agora: {type: string, description: "ISO 8601; o app manda de volta em ?desde= na próxima vez"}
+    Comum:
+      type: object
+      description: Campos que todo registro pode ter
+      properties:
+        nome: {type: string, description: "quem fez (nome digitado no app)"}
+        em: {type: string, description: "ISO 8601, quando fez"}
+        asset: {type: string, description: "id do arquivo enviado em /arquivos"}
+        _urlServ: {type: string, description: "url do arquivo no servidor (preenchida pelo app depois do /arquivos)"}
+    CodigoVR:
+      type: string
+      pattern: "^VR-\\d{2}-[A-Z]{2}-\\d{4}$"
+      description: "VR-OO-PP-NNNN: OO obra (00–20), PP parte/destinação (sigla), NNNN sequência. 9001+ = produto cadastrado no app."
+      example: VR-02-FE-0005
+    LinhaCotacao:
+      type: object
+      properties:
+        d: {type: string, description: "descrição comercial", example: "Vergalhão CA-50 Ø 10,0 mm – barra 12 m"}
+        u: {type: string, description: "unidade de venda", example: "barra 12 m"}
+        r:
+          type: array
+          description: "rateio: de onde vem a quantidade (uma linha pode juntar o mesmo item de várias obras)"
+          items:
+            type: object
+            properties:
+              c: {$ref: "#/components/schemas/CodigoVR"}
+              k: {type: string, description: "chave interna obra|parte|grupo|item"}
+              o: {type: string, description: "obra", example: "02"}
+              q: {type: number, example: 459}
+    Cotacao:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          properties:
+            num: {type: string, example: "151126-01"}
+            titulo: {type: string}
+            destino: {type: string}
+            prazo: {type: string}
+            agr: {type: boolean, description: "juntar itens iguais de obras diferentes"}
+            linhas: {type: array, items: {$ref: "#/components/schemas/LinhaCotacao"}}
+    Fornecedor:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          properties:
+            nome: {type: string}
+            cnpj: {type: string}
+            end: {type: string}
+            cidade: {type: string}
+            ac: {type: string, description: "aos cuidados de"}
+            email: {type: string}
+            cliente: {type: string, description: "nº de cliente no fornecedor"}
+    Orcamento:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          description: "Orçamento do fornecedor anexado a uma cotação (asset = PDF/foto do orçamento, obrigatório)"
+          properties:
+            cot: {type: string, description: "id da cotação"}
+            cotNum: {type: string}
+            forn: {$ref: "#/components/schemas/Fornecedor"}
+            prop: {type: string, description: "nº da proposta do fornecedor"}
+            data: {type: string}
+            pag: {type: object, properties: {forma: {type: string}, parc: {type: integer}, venc: {type: string}}}
+            frete: {type: string}
+            obs: {type: string, description: "observação ICMS/IPI para a OC"}
+            precos:
+              type: array
+              description: "mesma ordem das linhas da cotação"
+              items: {type: object, properties: {pu: {type: number}, cf: {type: string, description: "código do fornecedor"}, icms: {type: number}, ipi: {type: number}}}
+    OrdemCompra:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          description: |
+            Nasce "pendente". A liberação é feita no app com a senha de liberação e grava status "liberada", libNome, libEm.
+            O PDF da OC só é gerado depois da liberação. Recomendado: o servidor recusar status "liberada" de quem não tem perfil de liberação.
+          properties:
+            status: {type: string, enum: [pendente, liberada]}
+            num: {type: string, example: "151126-02"}
+            cot: {type: string}
+            cotNum: {type: string}
+            orc: {type: string, description: "id do orçamento"}
+            forn: {$ref: "#/components/schemas/Fornecedor"}
+            prop: {type: string}
+            propData: {type: string}
+            pag: {type: object}
+            frete: {type: string}
+            obsImp: {type: string}
+            titulo: {type: string}
+            destino: {type: string}
+            itens:
+              type: array
+              items:
+                type: object
+                properties:
+                  d: {type: string}
+                  u: {type: string}
+                  q: {type: number}
+                  pu: {type: number}
+                  icms: {type: number}
+                  ipi: {type: number}
+                  cf: {type: string}
+                  tot: {type: number}
+                  r: {type: array, items: {type: object}}
+            total: {type: number}
+            libNome: {type: string}
+            libEm: {type: string}
+    Produto:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          properties:
+            cod: {$ref: "#/components/schemas/CodigoVR"}
+            d: {type: string}
+            u: {type: string}
+            q: {type: number}
+            o: {type: string, description: "obra"}
+            sg: {type: string, description: "sigla da parte"}
+    Baixa:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          description: "Recebimento por nota fiscal (asset = foto/PDF da NF)"
+          properties:
+            obra: {type: string}
+            parte: {type: string}
+            itens: {type: array, items: {type: string}, description: "chaves dos itens recebidos"}
+            nf: {type: string}
+            oc: {type: string, description: "id da OC (opcional)"}
+    Foto:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          properties:
+            obra: {type: string}
+    Troca:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          description: "Troca, inclusão ou retirada de prancha de projeto"
+          properties:
+            doc: {type: string, description: "chave da prancha (ex.: est-05)"}
+            acao: {type: string, example: "troca"}
+            papel: {type: string}
+            cod: {type: string}
+            titulo: {type: string}
+            obra: {type: string}
+    Historico:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          properties:
+            acao: {type: string}
+            cod: {type: string}
+            titulo: {type: string}
+            obra: {type: string}
+            papel: {type: string}
+    Denuncias:
+      allOf:
+        - $ref: "#/components/schemas/Comum"
+        - type: object
+          description: "Um documento por aparelho (colecao denuncias/{dispositivo}) com a lista de denúncias"
+          properties:
+            itens: {type: array, items: {type: object}}
