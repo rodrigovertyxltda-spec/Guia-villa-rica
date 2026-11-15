@@ -29,14 +29,14 @@ rep('''  app.innerHTML=cabObra(o,"-docs")+`<a class="pilula clara"''','''  const
   app.innerHTML=cabObra(o,"-docs")+`<button class="pilula verde" data-off="${n}" style="margin:4px 0 10px;padding:12px">${offOk?"✓ Pranchas desta obra salvas · atualizar":"Baixar pranchas desta obra para usar sem internet"}</button>`+`<a class="pilula clara"''')
 rep('<p class="aviso">${totPg} páginas','<p class="aviso">Aplicativo instalado: funciona sem internet. ${totPg} páginas')
 # extras antes de rota
-rep('\nfunction rota(){',open(S+'/pwasrc/extra.js').read()+'\nfunction rota(){')
+rep('\nfunction rota(){',open(S+'/pwasrc/extra.js').read()+'\n'+open(S+'/pwasrc/compras.js').read()+'\nfunction rota(){')
 a=a.replace('@@STYLE@@',open(S+'/style.css.html').read()).replace('@@LOGO@@',open(S+'/logo.b64').read()).replace('@@TROCA@@',open(S+'/troca.hash.json').read())
 a=a.replace('<meta name="claude:viewport-fit-sides" content="cover">','')
 open(O+'/index.html','w').write(a)
 shutil.copy(S+'/pwasrc/api.js',O+'/api.js');shutil.copy(S+'/site/data.json',O+'/data.json')
 json.dump({"name":"Guia de Obra","short_name":"Guia de Obra","start_url":"./","scope":"./","display":"standalone","background_color":"#0D1526","theme_color":"#F26A10","lang":"pt-BR",
  "icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]},open(O+'/manifest.webmanifest','w'),ensure_ascii=False,indent=1)
-shell=['./','index.html','api.js','data.json','fin.enc.json','manifest.webmanifest']+[os.path.relpath(f,O) for f in sorted(glob.glob(O+'/icons/*')+glob.glob(O+'/fonts/*')+glob.glob(O+'/f/*')+glob.glob(O+'/pt/*'))]
+shell=['./','index.html','api.js','data.json','fin.enc.json','cmp.enc.json','jspdf.min.js','logo-oc.jpg','manifest.webmanifest']+[os.path.relpath(f,O) for f in sorted(glob.glob(O+'/icons/*')+glob.glob(O+'/fonts/*')+glob.glob(O+'/f/*')+glob.glob(O+'/pt/*'))]
 h=hashlib.sha256(b''.join(open(O+'/'+(x if x!='./' else 'index.html'),'rb').read() for x in shell)).hexdigest()[:10]
 sw=open(S+'/pwasrc/sw.js').read().replace('@@VER@@',h).replace('@@SHELL@@',json.dumps(shell))
 open(O+'/sw.js','w').write(sw)
