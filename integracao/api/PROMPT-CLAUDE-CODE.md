@@ -99,7 +99,7 @@ Passos:
 4. Em dois aparelhos (ou duas janelas anônimas) configurados no mesmo servidor: no 1º, Compras da obra > Cotação e ordem de compra > criar um pedido de cotação; no 2º, em até 60 s a cotação aparece, com número vindo do servidor.
 5. Anexar um orçamento (foto/PDF) e gerar a OC: no 2º aparelho ela aparece como pendente; liberar e conferir `status:"liberada"` no banco.
 
-## Arquivos de apoio (no pacote)
+## Arquivos de apoio (no ZIP enviado e também no repositório do app, pasta `integracao/api/`)
 - `openapi.yaml`: especificação formal (OpenAPI 3.0.3) com esquemas e exemplos.
 - `exemplos/*.json`: requisições e respostas de exemplo.
 - `mock_api.py`: servidor de referência em Python (memória, ~40 linhas), usado nos nossos testes; mostra o comportamento esperado (token de teste `teste`, porta 8768).
