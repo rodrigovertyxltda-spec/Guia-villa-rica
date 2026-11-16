@@ -1,0 +1,26 @@
+﻿Código;Obra;Nome da obra;Parte (destinação);Grupo;Descrição;Unid.;Quant. da lista;Obs.
+VR-00-EI-0015;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Poste LED 100 W h = 6 m (aço galvanizado, braço e base) – vias, acesso e lagoas;un;72;QIE-N, QIE-S, QD-ENT
+VR-00-EI-0016;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Luminária LED viária 100 W IP66;un;72;
+VR-00-EI-0017;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Poste metálico h = 8 m com cruzeta p/ 2 refletores – entorno das piscinas;un;40;QIE-S
+VR-00-EI-0018;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Refletor LED 150 W IP66 – entorno das piscinas;un;80;
+VR-00-EI-0019;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Poste metálico h = 8 m p/ 2 projetores – peteca, beach tennis, futebol 7;un;20;QD-ESP-N / QD-ESP-L
+VR-00-EI-0020;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Projetor LED 400 W IP66 – peteca, beach tennis, futebol 7;un;40;
+VR-00-EI-0021;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Poste metálico h = 9 m com cruzeta p/ 2 luminárias – estacionamento, pátio de carga, área técnica;un;16;QD-EST / QD-MAN
+VR-00-EI-0022;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Luminária LED 150 W IP66 – estacionamento, pátio de carga, área técnica;un;32;
+VR-00-EI-0023;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Torre metálica 18 m p/ 5 projetores, com base – campo oficial;un;6;QD-ESP-N
+VR-00-EI-0024;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Projetor LED 1.000 W IP66 – campo oficial;un;30;
+VR-00-EI-0025;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Balizador LED 7 W IP67;un;140;
+VR-00-EI-0026;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Caixa de passagem 30 x 30 cm ao pé de poste/torre;un;154;
+VR-00-EI-0027;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;"Haste de aterramento 5/8"" x 2,4 m (1 a cada 5 postes)";un;31;
+VR-00-EI-0028;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Fotocélula + relógio astronômico + contator;cj;3;QIE-N, QIE-S, QD-ENT
+VR-00-EI-0029;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Cabo 0,6/1 kV EPR 3 x 1 x 6 mm² + PE 6 mm² – circuitos de iluminação externa;m;4.158;ELE-13 R01
+VR-00-EI-0030;00;Geral;Elétrica – iluminação;Redes externas entre obras · Iluminação;Eletroduto PEAD corrugado Ø 50 mm – iluminação externa;m;4.158;ELE-13 R01
+VR-10-EP-0008;10;3 pisos das quadras de peteca (existentes);Esportes;Esportes;Tinta acrílica para piso esportivo – lata 18 L;lata;20;693 m², 2 demãos (≈0,25 L/m² por demão)
+VR-10-EP-0009;10;3 pisos das quadras de peteca (existentes);Esportes;Esportes;Tinta de demarcação branca para piso esportivo – galão 3,6 L;galão;2;202,5 m de linhas de 5 cm, 2 demãos
+VR-10-EP-0010;10;3 pisos das quadras de peteca (existentes);Esportes;Esportes;Grelha/canaleta de borda de caimento;m;33;
+VR-10-EP-0011;10;3 pisos das quadras de peteca (existentes);Esportes;Esportes;Postes de peteca com buchas de piso + rede oficial;conj;3;3 quadras 15 x 7,5 m
+VR-13-PR-0006;13;Quiosques;Pisos e revestimentos;Quiosques de churrasqueira · Pisos (3 quiosques);Rodapé/soleira cerâmica de borda do piso;m;183,6;
+VR-11-AL-0020;11;;Alambrado;Beach tennis (4 quadras);Chapa de base 150 x 150 x 6,3 mm galvanizada (postes sobre a cinta);un;50;
+VR-11-AL-0021;11;;Alambrado;Beach tennis (4 quadras);Chumbador químico Ø10 mm x 120 (barra roscada + ampola/resina);un;200;
+VR-11-AL-0022;11;;Alambrado;Futebol 7 (2 campos);Chapa de base 150 x 150 x 6,3 mm galvanizada (postes sobre a cinta);un;140;
+VR-11-AL-0023;11;;Alambrado;Futebol 7 (2 campos);Chumbador químico Ø10 mm x 120 (barra roscada + ampola/resina);un;560;
