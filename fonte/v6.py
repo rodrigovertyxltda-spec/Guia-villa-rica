@@ -1,6 +1,6 @@
 import openpyxl,json
 S='site/data.json';D=json.load(open(S))
-wb=openpyxl.load_workbook('/mnt/project-files/orcamento/villa-rica-orcamento-cronograma-v4.xlsx',read_only=True,data_only=True)
+wb=openpyxl.load_workbook('/mnt/project-files/orcamento/villa-rica-orcamento-cronograma-v6.xlsx',read_only=True,data_only=True)
 rows=[r for r in wb['Físico-financeiro'].iter_rows(values_only=True) if any(x is not None for x in r)]
 hdr=rows[0];ix=[i for i,h in enumerate(hdr) if isinstance(h,str) and '/' in h][:24]
 cr=[]
@@ -8,7 +8,7 @@ for i,r in enumerate(rows):
     if r[1]=='R$':
         m=rows[i+1];a=rows[i+2]
         # linhas de % deslocadas uma coluna à esquerda (sem coluna Total)
-        mm=[float(x or 0) for x in m[2:26]];aa=[float(x or 0) for x in a[2:26]];assert len(mm)==24
+        mm=[float(x or 0) for x in m[3:27]];aa=[float(x or 0) for x in a[3:27]];assert len(mm)==24
         cr.append([r[0],[1 if v>0.0001 else 0 for v in mm],[round(v*100,1) for v in mm],[round(v*100,1) for v in aa]])
 assert len(cr)==24
 old={c[0]:c for c in D['crono']}
