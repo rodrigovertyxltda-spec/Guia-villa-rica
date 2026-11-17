@@ -32,7 +32,9 @@ for r in C.I:
         if r['novo']:
             it[0]=r['Descrição'];it[2]=C.br(r['q']) if r['q'] is not None else it[2];it[3]='M'
             it[5]=nota(r['Obs.'],it[5] if len(it)>5 else '');st['set']+=1
-    else:
+        elif it[0]!=r['Descrição']:
+            it[0]=r['Descrição'];it[5]=nota('',it[5] if len(it)>5 else '');st['set']+=1
+    elif not r.get('drop'):
         lst,a=loc[prev]
         pref=prev[:-4];code=nxt(pref)
         new=[r['Descrição'],r['Unid.'],C.br(r['q']),'M',code,nota(r['Obs.'],'')]
